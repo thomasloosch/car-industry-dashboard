@@ -1,0 +1,25 @@
+name: Update financial data
+on:
+  schedule:
+    - cron: '0 6 * * 0'   # Every Sunday 06:00 UTC
+  workflow_dispatch:        # Allow manual trigger from GitHub UI
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # Needed to commit data.json back
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python fetcher.py
+      - name: Commit updated data.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --cached --quiet || git commit -m "Auto-update financial data $(date -u +%Y-%m-%d)"
+          git push

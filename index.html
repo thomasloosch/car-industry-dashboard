@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Automotive Peer Comparison 2017–H1 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#F8FAFC;font-family:system-ui,-apple-system,sans-serif;color:#111827;padding:20px 24px}
+h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:11px;color:#9CA3AF;margin:3px 0 0 36px}
+.hdr{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.logo{width:24px;height:24px;border-radius:50%;background:#B91C1C;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;color:#fff;flex-shrink:0}
+.view-toggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid #E5E7EB;background:#fff}
+.vtab{padding:8px 20px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:#6B7280;font-family:inherit;transition:all .15s}
+.vtab.active{background:#111827;color:#fff}
+.top-bar{display:flex;gap:10px;align-items:center;margin:14px 0;flex-wrap:wrap}
+.section{display:none}.section.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.stat{background:#fff;border:1px solid #E5E7EB;border-top:3px solid transparent;border-radius:10px;padding:11px 13px}
+.sl{font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;margin-bottom:4px}
+.sv{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.ss{font-size:10.5px;color:#6B7280;margin-top:2px}
+.controls{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.ctrl-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:4px}
+.btn-group{display:flex;border-radius:7px;overflow:hidden;border:1px solid #E5E7EB;flex-wrap:wrap}
+.btn{padding:6px 12px;font-size:11.5px;font-weight:500;border:none;background:#fff;cursor:pointer;color:#6B7280;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn.active{background:#111827;color:#fff}
+.co-grid{display:flex;flex-wrap:wrap;gap:4px}
+.co-btn{padding:4px 10px;font-size:11px;font-weight:500;border-radius:20px;border:1.5px solid;cursor:pointer;transition:all .15s;font-family:inherit}
+.card{background:#fff;border-radius:12px;border:1px solid #E5E7EB;padding:16px 14px 12px;box-shadow:0 1px 3px rgba(0,0,0,.04);position:relative}
+.card-hdr{padding:0 4px 10px;display:flex;justify-content:space-between;align-items:flex-start}
+.ct{font-size:12.5px;font-weight:600;color:#374151}
+.cs{font-size:11px;color:#9CA3AF;margin-top:1px}
+.chart-wrap{position:relative;height:370px}
+.note{background:#FFF7ED;border:1px solid #FDE68A;border-radius:6px;padding:8px 11px;font-size:10.5px;color:#92400E;margin-top:8px;line-height:1.6}
+.info{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;padding:8px 11px;font-size:10.5px;color:#0C4A6E;margin-top:6px;line-height:1.6}
+.warn-banner{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:9px 13px;font-size:11.5px;color:#92400E;margin:0 0 12px;line-height:1.6;display:none}
+.subtabs{display:flex;gap:0;border-bottom:2px solid #E5E7EB;margin-bottom:12px;flex-wrap:wrap}
+.stab{padding:7px 12px;font-size:11.5px;font-weight:500;border:none;background:none;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:inherit}
+.stab.active{color:#111827;border-bottom-color:#111827;font-weight:600}
+.legend{display:flex;gap:10px;margin-top:9px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:10.5px;color:#6B7280}
+.sw-line{width:16px;height:2.5px;border-radius:2px;flex-shrink:0}
+.sw-box{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.upd-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;font-weight:500;border-radius:8px;border:1px solid #059669;background:#ECFDF5;color:#047857;cursor:pointer;font-family:inherit}
+.upd-btn:hover{background:#D1FAE5}
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:rgba(248,250,252,.85);backdrop-filter:blur(1px);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid #E5E7EB;border-top-color:#111827;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12.5px;color:#6B7280;font-weight:500}
+/* Modal (editor) */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;width:min(480px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+@media(max-width:800px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){body{padding:12px}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading latest data…</div>
+</div>
+
+<div class="hdr"><div class="logo">T</div><h1>Automotive Peer Comparison — Tesla vs Industry</h1></div>
+<p class="sub">8 companies · Annual 2017–2025 · H1 2026 where available · Financials in USD · Deliveries in thousands · Auto-updates every Sunday via GitHub Actions · Last updated: <span id="lastUpdated">loading…</span></p>
+
+<div class="top-bar">
+  <div class="view-toggle">
+    <button class="vtab active" onclick="setView('peer')">Peer Comparison</button>
+    <button class="vtab" onclick="setView('tesla')">Tesla Deep Dive</button>
+  </div>
+  <button class="upd-btn" style="border-color:#7C3AED;color:#6D28D9;background:#F5F3FF" onclick="openEditor()">✏ Edit Data</button>
+  <span style="font-size:11px;color:#CBD5E1">H1 26* = half-year · Delivery data updated manually each quarter</span>
+</div>
+
+<div class="warn-banner" id="fallbackNotice">⚠ Running locally — <code>data.json</code> not found (or failed to load). Showing the last built-in dataset instead. This is expected if you're opening this file directly (<code>file://</code>) rather than serving it, or if the GitHub Actions workflow hasn't run yet. You can still use <strong>✏ Edit Data</strong> below to paste in values manually — your edits are saved to this browser and persist across reloads.</div>
+
+<div class="stats">
+  <div class="stat" style="border-top-color:#DC2626"><div class="sl">Tesla H1 2026 deliveries</div><div class="sv" style="color:#DC2626">817k</div><div class="ss">All BEV · +21% YoY · op margin 2.6%</div></div>
+  <div class="stat" style="border-top-color:#16A34A"><div class="sl">BYD Q2 2026 BEV</div><div class="sv" style="color:#16A34A">557k</div><div class="ss">BEV only · ahead of Tesla Q2 on BEV</div></div>
+  <div class="stat" style="border-top-color:#EA580C"><div class="sl">VW Group H1 2026</div><div class="sv" style="color:#EA580C">4.13M</div><div class="ss">Total · 438k BEV (10.6% share)</div></div>
+  <div class="stat" style="border-top-color:#2563EB"><div class="sl">BMW Group H1 2026</div><div class="sv" style="color:#2563EB">1.16M</div><div class="ss">Total · 204k BEV (17.7% share)</div></div>
+  <div class="stat" style="border-top-color:#9333EA"><div class="sl">Stellantis H1 2026</div><div class="sv" style="color:#9333EA">2.96M</div><div class="ss">Total shipments · recovering</div></div>
+</div>
+
+<!-- ═══ PEER ════════════════════════════════════════════════════════════ -->
+<div id="sec-peer" class="section active">
+  <div class="controls">
+    <div>
+      <div class="ctrl-label">Metric</div>
+      <div class="btn-group">
+        <button class="btn active" onclick="setPM('margin')">Op. Margin %</button>
+        <button class="btn" onclick="setPM('revenue')">Revenue $B</button>
+        <button class="btn" onclick="setPM('ni')">Net Income $B</button>
+        <button class="btn" onclick="setPM('fcf')">Free Cash Flow $B</button>
+        <button class="btn" onclick="setPM('capex')">CapEx $B</button>
+        <button class="btn" onclick="setPM('deliveries')">Deliveries</button>
+      </div>
+    </div>
+    <div id="delSubWrap" style="display:none">
+      <div class="ctrl-label">Delivery view</div>
+      <div class="btn-group" id="delSubBtns">
+        <button class="btn active" onclick="setDelSub('total')">Total</button>
+        <button class="btn" onclick="setDelSub('bev')">BEV only</button>
+        <button class="btn" onclick="setDelSub('share')">EV Share %</button>
+      </div>
+    </div>
+    <div>
+      <div class="ctrl-label">Companies</div>
+      <div class="co-grid" id="coGrid"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div><div class="ct" id="pTitle"></div><div class="cs" id="pSub"></div></div></div>
+    <div class="chart-wrap"><canvas id="pChart"></canvas></div>
+    <div id="pNote" class="note" style="display:none"></div>
+    <div id="pInfo" class="info" style="display:none"></div>
+  </div>
+  <div class="legend" id="pLeg"></div>
+</div>
+
+<!-- ═══ TESLA DEEP DIVE ═════════════════════════════════════════════ -->
+<div id="sec-tesla" class="section">
+  <div class="subtabs">
+    <button class="stab active" onclick="setTS(0)">Revenue</button>
+    <button class="stab" onclick="setTS(1)">Margins</button>
+    <button class="stab" onclick="setTS(2)">Net Income</button>
+    <button class="stab" onclick="setTS(3)">Free Cash Flow</button>
+    <button class="stab" onclick="setTS(4)">CapEx &amp; Cash</button>
+    <button class="stab" onclick="setTS(5)">Production &amp; Deliveries</button>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <div><div class="ct" id="tTitle"></div><div class="cs" id="tSub"></div></div>
+      <div id="tAxisR" style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9CA3AF"></div>
+    </div>
+    <div class="chart-wrap"><canvas id="tChart"></canvas></div>
+    <div id="tNA" class="note" style="display:none"></div>
+    <div id="tNB" class="info" style="display:none"></div>
+  </div>
+  <div class="legend" id="tLeg"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// MUTABLE DATA — populated by init() from data.json (or the fallback
+// dataset below), then overlaid with any localStorage edits.
+// ═══════════════════════════════════════════════════════════════════════
+let YRS = [];
+let peers = [];
+let TQ = [];
+let tRA=[], tRE=[], tRS=[], tGM=[], tOM=[], tNI=[], tFCF=[], tCX=[], tCS=[];
+let tCXe = [];
+let TQDEL_Q=[], TQPROD=[], TQDELI=[];
+
+// ═══════════════════════════════════════════════════════════════════════
+// OFFLINE FALLBACK — used only if data.json can't be fetched (e.g. opened
+// via file:// or before the first GitHub Actions run). Same shape as
+// data.json, same values fetcher.py seeds itself with on a fresh repo.
+// ═══════════════════════════════════════════════════════════════════════
+const FALLBACK_DATA = {
+ generated_at: null,
+ years: ['2017','2018','2019','2020','2021','2022','2023','2024','2025','H1 26*'],
+ peers: [
+  {id:'tesla',name:'Tesla',color:'#DC2626',dash:[],
+   margin:  [-13.9,-1.8,-0.3,6.3,12.1,16.8,9.2,7.2,4.5,2.6],
+   revenue: [11.76,21.46,24.58,31.54,53.82,81.5,96.8,97.7,94.8,50.6],
+   ni:      [-1.96,-0.98,-0.87,0.72,5.52,12.6,15.0,7.3,3.8,1.6],
+   fcf:     [-3.2,-0.22,1.07,2.8,5.0,7.6,4.4,3.5,6.2,0.35],
+   capex:   [3.4,2.1,1.33,1.49,6.48,7.0,8.9,9.3,8.5,8.3],
+   del_total:[103,245,367,500,936,1314,1809,1789,1636,817],
+   del_bev:  [103,245,367,500,936,1314,1809,1789,1636,817],
+   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+  {id:'ford',name:'Ford',color:'#1D4ED8',dash:[5,3],
+   margin:  [3.5,2.0,-0.1,0.5,3.6,4.0,3.1,2.8,-4.9,6.6],
+   revenue: [156.8,160.3,155.9,127.1,136.3,158.1,176.2,185.0,187.3,91.5],
+   ni:      [7.6,3.7,0.05,-1.3,1.8,-2.0,4.6,5.9,-8.2,1.2],
+   fcf:     [2.6,0.6,2.4,-3.9,4.5,9.1,6.0,5.4,2.5,0.2],
+   capex:   [7.0,7.8,7.0,5.7,6.8,7.7,8.3,8.4,9.0,null],
+   del_total:[5600,5400,5400,4200,3900,4200,4400,4300,4100,null],
+   del_bev:  [0,0,0,0,3,80,72,87,75,null],
+   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+  {id:'gm',name:'GM',color:'#0D9488',dash:[],
+   margin:  [8.0,7.5,7.5,3.5,11.3,9.2,7.2,7.5,5.5,9.0],
+   revenue: [145.6,147.0,137.2,122.5,127.0,156.7,171.8,187.4,190.0,91.6],
+   ni:      [-3.9,8.0,6.7,6.4,10.0,9.9,10.0,6.0,5.0,3.9],
+   fcf:     [5.0,4.0,6.5,3.0,7.5,10.5,10.5,11.5,9.0,null],
+   capex:   [7.0,8.0,7.5,5.5,8.0,7.0,8.5,7.5,7.0,null],
+   del_total:[9600,8900,7700,6800,6700,5900,6200,6400,6200,null],
+   del_bev:  [0,0,0,0,26,39,75,130,110,57],
+   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+  {id:'vw',name:'Volkswagen',color:'#EA580C',dash:[6,3],
+   margin:  [6.8,6.7,4.2,2.9,7.9,8.1,7.0,5.9,2.8,3.8],
+   revenue: [260.7,278.5,282.7,254.3,296.0,308.6,348.0,351.0,343.0,170.6],
+   ni:      [12.9,14.4,15.7,11.4,18.2,16.2,16.3,6.1,2.7,3.3],
+   fcf:     [5.1,2.4,2.2,1.1,5.3,7.4,8.6,5.4,6.9,3.5],
+   capex:   [15.8,17.7,20.1,16.0,17.7,17.9,20.5,19.5,16.2,null],
+   del_total:[10742,10834,10975,9305,8882,8263,9237,9038,8800,4130],
+   del_bev:  [29,80,134,231,453,572,771,866,900,438],
+   del_dm:   [0,0,0,35,95,145,193,295,350,246], fetch_error:false},
+  {id:'bmw',name:'BMW',color:'#2563EB',dash:[],
+   margin:  [8.9,7.2,4.0,3.3,10.3,8.6,9.8,8.8,6.5,3.6],
+   revenue: [111.5,115.1,116.6,112.4,131.6,150.2,167.8,154.2,140.4,67.2],
+   ni:      [9.8,8.5,5.6,4.5,14.7,19.6,13.2,9.4,8.1,3.1],
+   fcf:     [5.1,2.4,0.6,2.9,5.9,5.3,7.6,5.6,5.4,1.4],
+   capex:   [5.7,5.9,6.2,5.1,6.5,6.8,8.1,7.6,7.0,null],
+   del_total:[2464,2490,2520,2326,2521,2399,2554,2437,2350,1157],
+   del_bev:  [33,37,25,44,104,216,376,427,440,204],
+   del_dm:   [35,55,60,55,65,95,130,150,175,91], fetch_error:false},
+  {id:'mercedes',name:'Mercedes',color:'#525252',dash:[4,4],
+   margin:  [9.9,7.8,4.3,3.5,12.9,13.7,12.9,9.3,6.2,4.0],
+   revenue: [185.7,197.7,193.3,176.0,198.8,161.3,165.7,157.7,142.7,68.7],
+   ni:      [12.3,9.0,3.0,4.6,28.2,15.6,15.7,11.3,5.9,2.7],
+   fcf:     [5.7,4.7,4.5,6.3,11.8,8.4,11.3,10.0,5.8,3.2],
+   capex:   [7.3,8.3,7.8,6.3,7.1,4.7,5.2,4.9,4.3,null],
+   del_total:[2289,2310,2340,2165,2094,2041,2042,1850,1750,1012],
+   del_bev:  [1,2,5,20,67,118,230,205,190,121],
+   del_dm:   [10,20,25,30,40,100,160,175,180,null], fetch_error:false},
+  {id:'stellantis',name:'Stellantis',color:'#9333EA',dash:[8,3,2,3],
+   margin:  [null,null,null,null,11.8,13.6,12.8,5.5,-0.5,2.2],
+   revenue: [null,null,null,null,180.0,189.1,204.8,169.9,165.6,88.0],
+   ni:      [null,null,null,null,15.0,15.7,19.8,6.0,-24.1,0.76],
+   fcf:     [null,null,null,null,8.3,10.5,8.3,-6.5,-4.9,-0.97],
+   capex:   [null,null,null,null,8.9,7.4,7.9,6.3,5.2,null],
+   del_total:[null,null,null,null,6100,5600,6200,5800,5400,2961],
+   del_bev:  [null,null,null,null,44,86,100,110,90,null],
+   del_dm:   [null,null,null,null,200,350,500,560,520,null], fetch_error:false},
+  {id:'byd',name:'BYD',color:'#16A34A',dash:[],
+   margin:  [2.5,2.0,1.8,2.2,2.5,5.4,6.4,7.0,4.8,null],
+   revenue: [15.6,19.8,18.1,22.7,33.5,62.8,84.3,107.2,110.1,null],
+   ni:      [0.6,0.4,0.2,0.6,0.5,2.5,4.2,5.6,4.8,0.6],
+   fcf:     [-0.5,-1.0,0.5,1.5,0.5,1.5,4.2,8.3,6.9,null],
+   capex:   [2.5,3.6,4.0,4.1,7.3,7.4,11.2,13.8,12.3,null],
+   del_total:[447,521,462,427,593,1868,3024,4272,4272,null],
+   del_bev:  [113,228,219,182,325,911,1575,1765,1900,975],
+   del_dm:   [334,293,243,245,268,957,1449,2507,2600,null], fetch_error:false},
+ ],
+ deliveries_note: "Updated manually — see Edit Data panel in dashboard",
+ tesla_quarterly: {
+  labels: ['Q1 22','Q2 22','Q3 22','Q4 22','Q1 23','Q2 23','Q3 23','Q4 23',
+           'Q1 24','Q2 24','Q3 24','Q4 24','Q1 25','Q2 25','Q3 25','Q4 25','Q1 26','Q2 26'],
+  tRA:[14736,14602,18692,21307,19963,21268,19625,21563,17378,19878,20016,19798,13967,16661,21205,17693,16234,20520],
+  tRE:[1072,866,1117,1310,1529,1509,1559,1438,1635,3014,2376,3061,2730,2789,3415,3837,2408,3140],
+  tRS:[1948,1466,1645,1701,1837,2150,2166,2166,2288,2608,2790,2848,2638,3046,3475,3371,3745,4580],
+  tGM:[29.1,25.0,25.1,23.8,19.3,18.2,17.9,17.6,17.4,18.0,19.8,16.3,16.3,17.2,18.0,20.1,21.1,16.8],
+  tOM:[19.2,14.6,17.2,16.0,11.4,9.6,7.6,8.2,5.5,6.3,10.8,6.2,2.1,4.1,5.8,5.7,4.2,1.4],
+  tNI:[3318,2259,3292,3687,2513,2703,1853,7928,1390,1400,2173,2317,409,1172,1373,840,477,1110],
+  tFCF:[2228,621,3284,1420,441,1005,848,2064,-2531,1300,2742,2034,664,146,3990,1420,1440,-1090],
+  tCX:[1700,1652,1803,1858,2072,2060,2460,2306,2731,2300,1500,2780,1492,2394,2248,2393,2505,5790],
+  tCS:[19600,18900,21100,22185,22402,23075,26077,29094,26863,30700,33600,36563,36996,36782,41647,44059,44759,43520],
+ },
+ tesla_deliveries: {
+  labels: ['Q1 17','Q2 17','Q3 17','Q4 17','Q1 18','Q2 18','Q3 18','Q4 18','Q1 19','Q2 19','Q3 19','Q4 19',
+           'Q1 20','Q2 20','Q3 20','Q4 20','Q1 21','Q2 21','Q3 21','Q4 21',
+           'Q1 22','Q2 22','Q3 22','Q4 22','Q1 23','Q2 23','Q3 23','Q4 23',
+           'Q1 24','Q2 24','Q3 24','Q4 24','Q1 25','Q2 25','Q3 25','Q4 25','Q1 26','Q2 26'],
+  production:[25418,25708,25336,24565,34412,53339,80142,86555,77138,87048,96155,104891,
+              102672,82272,145063,179757,180338,206421,237823,305840,
+              305407,258580,365923,439701,440808,479700,430488,494989,
+              433371,410831,469796,459445,362615,410244,447450,434358,408386,451758],
+  deliveries:[25000,22000,26150,29870,30300,40740,83500,90700,63019,95356,97186,112095,
+              88496,90891,139593,180667,184877,201304,241391,308600,
+              310048,254695,343830,405278,422875,466140,435059,484507,
+              386810,443956,462890,495570,336681,384122,497099,418227,336681,480126],
+ },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// METRIC + DELIVERY CONFIGS (static — don't depend on fetched data)
+// ═══════════════════════════════════════════════════════════════════════
+const FIN_METRICS = ['margin','revenue','ni','fcf','capex'];
+let curDelSub = 'total';
+
+const MC = {
+ margin:{key:'margin',title:'Operating Margin % — 2017–2025 · H1 2026 where reported',
+  sub:'H1 26* = half-year. Definitions vary — see note. Tesla arc: –14% (2017) → +17% (2022) → 2.6% (H1 2026)',
+  fmt:v=>`${v.toFixed(1)}%`,yTick:v=>`${v}%`,
+  note:'Definitions: Tesla=GAAP op margin · Ford H1 2026=adj EBIT margin 6.6% (GAAP negative due to BlueOval SK charges) · GM=EBIT-adj · VW=op return on sales · BMW=auto-seg EBIT margin · Mercedes=Cars RoS (pre-2022 = Daimler AG) · Stellantis=AOI margin · BYD=GAAP op margin (incl. electronics). Tesla Q2 2026: op margin 1.4%; H1 avg 2.6%. OpEx surged 47% on AI/Cybercab investment. CapEx jumped 142% in Q2.',
+  info:'COVID 2020 trough visible across all. 2021 chip shortage → lower volume but pricing power = record margins for legacy OEMs. Tesla peaked at 19.2% (Q1 2022). Mercedes H1 2026 not yet reported.',
+ },
+ revenue:{key:'revenue',title:'Revenue — 2017–2025 · H1 2026 where reported ($B USD)',
+  sub:'H1 26* = half-year (NOT annualised). EUR×period-avg; CNY×period-avg',
+  fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
+  note:'H1 2026 values are half-year. Mercedes pre-2022 = Daimler AG (incl. Daimler Truck). VW/BMW/Mercedes include financial services. BYD includes electronics (~30%). Tesla hit $100B in trailing 12-month revenue for the first time in Q2 2026.',
+  info:'',
+ },
+ ni:{key:'ni',title:'Net Income — 2017–2025 · H1 2026 where reported ($B USD)',
+  sub:'H1 26* = half-year. GAAP · Multiple material one-time items — see note',
+  fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
+  note:'One-time distortions: Ford 2017/2025 · GM 2017 (tax reform) · BMW 2022 (Brilliance JV) · Mercedes/Daimler 2021 (Truck spin-off) · Tesla 2023 (tax asset release) · Tesla Q2 2026 NI $1.1B incl. $1.0B SpaceX unrealised gain · Stellantis 2025 (–€22B reset charges = –$24.1B GAAP).',
+  info:'',
+ },
+ fcf:{key:'fcf',title:'Free Cash Flow — 2017–2025 · H1 2026 where reported ($B USD)',
+  sub:'H1 26* = half-year. Definitions vary — directional comparison only',
+  fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
+  note:'Definitions: Tesla=op cash – capex (GAAP; H1 2026: +$0.35B as Q1 +$1.44B offset Q2 –$1.09B when CapEx surged 142%) · Ford=adj FCF · GM=adj auto FCF · VW=auto-div cash flow (H1 2026: +€3.2B vs –€1.4B in H1 2025 — dramatic improvement) · BMW=auto-seg FCF · Mercedes=industrial FCF (2024/25 confirmed) · Stellantis=industrial FCF (H1 2026: –€0.97B) · BYD=approximate.',
+  info:'',
+ },
+ capex:{key:'capex',title:'Capital Expenditure — 2017–2025 · H1 2026 where reported ($B USD)',
+  sub:'H1 26* = half-year. VW group incl. all brands + trucks; non-Tesla largely approx',
+  fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
+  note:'Tesla H1 2026 CapEx: Q1 $2.5B + Q2 $5.8B = $8.3B. Q2 alone (+142% YoY) driven by AI chip infrastructure, Cybercab line, and a planned chip fabrication facility announced on the earnings call. 2026 on track to be Tesla\'s largest-ever CapEx year by a wide margin. VW includes all brands and TRATON trucks — not comparable to single-brand peers. European figures approximate EUR conversions.',
+  info:'',
+ },
+};
+
+function getDelConfig(){
+ const s=curDelSub;
+ if(s==='total')return{
+  title:'Total Vehicle Deliveries — 2017–2025 · H1 2026 where confirmed (000s)',
+  sub:'H1 26* = half-year. Ford/GM = primarily NA+Europe. BYD = BEV + DM/PHEV combined.',
+  fmt:v=>`${v.toFixed(0)}k`,yTick:v=>`${Math.round(v)}k`,
+  dataFn:p=>p.del_total,
+  note:'Ford and GM global delivery figures are approximate, primarily reflecting North America and Europe (Ford has exited or scaled back in South America, India; GM\'s China volumes are via JVs and less consistently reported globally). VW Group includes all brands (VW, Audi, Porsche, Škoda, SEAT, CUPRA, Lamborghini, Bentley). BYD total includes both pure BEV and DM-i/DM-p plug-in hybrid vehicles — all BYD vehicles are electrified. Stellantis figures are wholesale shipments. BYD 2025 approximate; H1 2026 total not yet compiled (BEV partial).',
+  info:'The scale gap is striking: VW delivers 10M+/yr, Tesla 1.6M, BYD 4M+. The more useful comparison on this chart is directional trends. Switch to "BEV only" to see where the EV race actually stands.',
+ };
+ if(s==='bev')return{
+  title:'Battery Electric Vehicle (BEV) Deliveries — 2017–2025 · H1 2026 (000s)',
+  sub:'Pure BEV only (excludes PHEV/DM). BYD H1 2026: Q2 confirmed 557k, Q1 estimated ~418k.',
+  fmt:v=>`${v.toFixed(0)}k`,yTick:v=>`${Math.round(v)}k`,
+  dataFn:p=>p.del_bev,
+  note:'BYD Q2 2026 BEV deliveries of 557,090 confirmed via Bloomberg compilation of BYD monthly data — BYD delivered more BEVs than Tesla (480,126) in Q2 2026. However, BYD\'s DM vehicles (plug-in hybrids) are NOT counted here, while all Tesla vehicles are BEV. BYD total electrified Q2 was roughly 1.3-1.5M. Ford and GM BEV figures are primarily US market data; some export BEVs not captured. Mercedes and BMW include MINI/Rolls-Royce brands. Historical pre-2021 figures for legacy OEMs are approximate from annual sustainability reports.',
+  info:'VW Group BEV trajectory: 29k (2017) → 572k (2022) → 900k (2025) → 438k in H1 2026. BMW: 33k → 216k → 440k → 204k H1. Mercedes accelerated sharply 2021–2023 then pulled back targets. Tesla + BYD still dominate the pure BEV category globally.',
+ };
+ return{ // share
+  title:'BEV Share of Total Deliveries (%) — 2017–2025 · H1 2026',
+  sub:'BEV / total deliveries. Tesla = 100%. BYD = BEV-only share (their DM/PHEV also electrified).',
+  fmt:v=>`${v.toFixed(1)}%`,yTick:v=>`${v}%`,
+  dataFn:p=>p.del_total.map((t,i)=>t&&p.del_bev[i]!=null?+(p.del_bev[i]/t*100).toFixed(1):null),
+  note:'Tesla is 100% BEV throughout. BYD\'s BEV share is declining as DM/PHEV grows faster — in 2024 BYD sold more DM than BEV vehicles. If counting all "electrified" (BEV + DM), BYD is 100%. BMW\'s BEV share reached 17.7% in H1 2026 despite total volume decline. VW Group remains at 10.6% BEV share despite aggressive ID lineup rollout. Mercedes saw its BEV share jump to ~12-13% in H1 2026 after launching the electric CLA and GLC EV. Ford and GM BEV share calculated from US-only BEV data vs global total — understates true EV share as European operations excluded.',
+  info:'',
+ };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CHART COLOURS + SHARED
+// ═══════════════════════════════════════════════════════════════════════
+const TC={P:'#1D4ED8',D:'#B91C1C',N:'#047857',om:'#B91C1C',fp:'#7C3AED',fn:'#EF4444',cx:'#0891B2',cs:'#059669',ot:'#F59E0B'};
+const G='#F0F2F5',A='#9CA3AF';
+const ttB={backgroundColor:'#fff',borderColor:'#E5E7EB',borderWidth:1,
+ titleColor:'#111827',bodyColor:'#374151',padding:9,cornerRadius:7,boxPadding:3,
+ titleFont:{weight:'700',size:11.5,family:'system-ui'},bodyFont:{size:11,family:'system-ui'}};
+
+// ═══════════════════════════════════════════════════════════════════════
+// PEER COMPARISON
+// ═══════════════════════════════════════════════════════════════════════
+let pChart=null,curM='margin';
+let vis=new Set();
+
+function buildCompanyToggle(){
+ const cg=document.getElementById('coGrid');
+ cg.innerHTML='';
+ peers.forEach(p=>{
+  const b=document.createElement('button');
+  b.className='co-btn';b.textContent=p.name;b.dataset.id=p.id;
+  b.style.cssText=`border-color:${p.color};color:${p.color};background:${p.color}18`;
+  b.onclick=()=>{
+   if(vis.has(p.id)){vis.delete(p.id);b.style.cssText=`border-color:#E5E7EB;color:${A};background:#fff`}
+   else{vis.add(p.id);b.style.cssText=`border-color:${p.color};color:${p.color};background:${p.color}18`}
+   renderPeer();
+  };
+  cg.appendChild(b);
+ });
+}
+
+function setPM(m){
+ curM=m;
+ document.getElementById('delSubWrap').style.display=m==='deliveries'?'block':'none';
+ document.querySelectorAll('#sec-peer .btn-group:first-of-type .btn').forEach((b,i)=>
+  b.classList.toggle('active',['margin','revenue','ni','fcf','capex','deliveries'][i]===m));
+ renderPeer();
+}
+
+function setDelSub(s){
+ curDelSub=s;
+ document.querySelectorAll('#delSubBtns .btn').forEach((b,i)=>b.classList.toggle('active',['total','bev','share'][i]===s));
+ renderPeer();
+}
+
+function renderPeer(){
+ const isD=curM==='deliveries';
+ const cfg=isD?getDelConfig():MC[curM];
+ document.getElementById('pTitle').textContent=cfg.title;
+ document.getElementById('pSub').textContent=cfg.sub;
+ const nEl=document.getElementById('pNote'),iEl=document.getElementById('pInfo');
+ nEl.style.display=cfg.note?'block':'none';if(cfg.note)nEl.textContent=cfg.note;
+ iEl.style.display=cfg.info?'block':'none';if(cfg.info)iEl.textContent=cfg.info;
+
+ const datasets=peers.filter(p=>vis.has(p.id)).map(p=>{
+  const data=isD?cfg.dataFn(p):p[curM];
+  return{label:p.name,data,borderColor:p.color,backgroundColor:p.color,
+   borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#fff',
+   pointBorderColor:p.color,pointBorderWidth:2,tension:.3,borderDash:p.dash||[],spanGaps:true};
+ });
+
+ if(pChart){pChart.destroy();pChart=null;}
+ pChart=new Chart(document.getElementById('pChart').getContext('2d'),{
+  type:'line',data:{labels:YRS,datasets},
+  options:{
+   responsive:true,maintainAspectRatio:false,
+   interaction:{mode:'index',intersect:false},
+   plugins:{legend:{display:false},
+    tooltip:{...ttB,callbacks:{label:c=>{const v=c.parsed.y;return v==null?null:`  ${c.dataset.label}: ${cfg.fmt(v)}`}}}},
+   scales:{
+    x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:11}}},
+    y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:11},callback:cfg.yTick}},
+   },
+  },
+ });
+
+ document.getElementById('pLeg').innerHTML=peers.filter(p=>vis.has(p.id)).map(p=>
+  `<div class="li"><span class="sw-line" style="background:${p.color}"></span>${p.name}${p.fetch_error?' ⚠':''}</div>`
+ ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TESLA TABS
+// ═══════════════════════════════════════════════════════════════════════
+const TSCFG=[
+ {title:'Revenue by Segment ($B) · Q1 2022–Q2 2026',sub:'Stacked: Automotive · Energy & Storage · Services · Segment data from 8-Ks (not auto-updated)',
+  axisR:'',nA:'',nB:'Tesla Q2 2026: record $28.24B total (+26% YoY). Auto $20.52B (+23%), Energy $3.14B (+13%), Services $4.58B (+50%). First trailing 12-month revenue above $100B.',
+  leg:[{c:TC.P,t:'box',l:'Automotive'},{c:TC.N,t:'box',l:'Energy & Storage'},{c:TC.D,t:'box',l:'Services'}],
+  build(){return{type:'bar',data:{labels:TQ,datasets:[
+   {label:'Automotive',data:tRA,backgroundColor:TC.P+'BB',stack:'r',borderRadius:{topLeft:0,topRight:0}},
+   {label:'Energy & Storage',data:tRE,backgroundColor:TC.N+'BB',stack:'r',borderRadius:{topLeft:0,topRight:0}},
+   {label:'Services',data:tRS,backgroundColor:TC.D+'BB',stack:'r',borderRadius:{topLeft:3,topRight:3}},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+   plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+    label:c=>`  ${c.dataset.label}: $${(c.parsed.y/1000).toFixed(1)}B`,
+    afterBody(i){const t=i.reduce((s,x)=>s+x.parsed.y,0);return[`  ─────`,`  Total: $${(t/1000).toFixed(1)}B`]},
+   }}},
+   scales:{x:{stacked:true,grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+           y:{stacked:true,grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(0)}B`}}},
+  }};} },
+ {title:'Gross Margin & Operating Margin (%) · Q1 2022–Q2 2026',sub:'GAAP · Q2 2026: gross 16.8%, operating 1.4%',
+  axisR:'',nA:'Q2 2026: operating margin fell to 1.4% (vs 4.1% in Q2 2025) as operating expenses surged 47% to $4.35B — AI infrastructure, Cybercab production ramp, FSD/Robotaxi R&D. CFO Taneja stated OpEx will "grow in 2026 and beyond."',nB:'',
+  leg:[{c:TC.P,t:'line',l:'Gross margin %'},{c:TC.om,t:'line',l:'Operating margin %'}],
+  build(){return{type:'line',data:{labels:TQ,datasets:[
+   {label:'Gross margin',data:tGM,borderColor:TC.P,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:TC.P,pointBorderWidth:2,tension:.3,fill:false},
+   {label:'Operating margin',data:tOM,borderColor:TC.om,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:TC.om,pointBorderWidth:2,tension:.3,fill:false},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+   plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+    label:c=>`  ${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`,
+    afterBody(i){if(i.length<2)return[];return[`  Opex drag: ${(i[0].parsed.y-i[1].parsed.y).toFixed(1)}pp`]},
+   }}},
+   scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+           y:{grid:{color:G},border:{display:false},min:0,max:35,ticks:{color:A,font:{size:10},callback:v=>`${v}%`}}},
+  }};} },
+ {title:'Net Income — GAAP ($M) · Q1 2022–Q2 2026',sub:'Q4 2023 amber: $5.9B one-time tax · Q2 2026 orange: $1.0B SpaceX unrealised gain',
+  axisR:'',nA:'Q4 2023: $7.9B includes $5.9B deferred tax asset release. Q2 2026: $1.11B includes $1.005B unrealised SpaceX equity gain excluded from non-GAAP ($0.33/share vs $0.53 expected). Underlying run-rate significantly below the GAAP headline in both quarters.',nB:'',
+  leg:[{c:TC.P,t:'box',l:'Net income (GAAP)'},{c:TC.ot,t:'box',l:'Q4 2023 one-time'},{c:'#F97316',t:'box',l:'Q2 2026 SpaceX gain'}],
+  build(){const cl=tNI.map((_,i)=>i===7?TC.ot+'CC':i===17?'#F97316CC':TC.P+'CC');
+   return{type:'bar',data:{labels:TQ,datasets:[{label:'Net income',data:tNI,backgroundColor:cl,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+     plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+      label(c){const v=c.parsed.y;const f=c.dataIndex===7?' ⚠ $5.9B tax':c.dataIndex===17?' incl. $1.0B SpaceX':'';return`  NI: $${(v/1000).toFixed(2)}B${f}`}}}},
+     scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+             y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(1)}B`}}},
+    }};} },
+ {title:'Free Cash Flow ($M) · Q1 2022–Q2 2026',sub:'Q1 2024 and Q2 2026 negative on AI capex surge',
+  axisR:'',nA:'',nB:'Q2 2026 FCF = –$1.09B: op cash $4.70B (+85% YoY) overwhelmed by CapEx $5.79B (+142%). Tesla explicitly guided that CapEx and OpEx will continue to grow through 2026+ as it builds AI chips, the Cybercab factory, and Semi/Megapack ramps.',
+  leg:[{c:TC.fp,t:'box',l:'FCF positive'},{c:TC.fn,t:'box',l:'FCF negative'}],
+  build(){const cl=tFCF.map(v=>v<0?TC.fn+'CC':TC.fp+'CC');
+   return{type:'bar',data:{labels:TQ,datasets:[{label:'FCF',data:tFCF,backgroundColor:cl,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+     plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+      label(c){const v=c.parsed.y;return`  FCF: $${(v/1000).toFixed(2)}B${v<0?' ⚠ negative':''}`}}}},
+     scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+             y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(1)}B`}}},
+    }};} },
+ {title:'CapEx & Cash & Investments · Q1 2022–Q2 2026',sub:'CapEx bars left ($M) · Cash & investments line right ($M)',
+  axisR:'Cash →',nA:'',nB:'Q2 2026 CapEx $5.79B = largest quarter in Tesla history. Cash fell from $44.76B (Q1 2026) to $43.52B (Q2 2026). Full-year 2026 CapEx likely to exceed $20B — Tesla is building AI chip fabs, Cybercab lines, and Semi capacity simultaneously.',
+  leg:[{c:TC.cx,t:'box',l:'CapEx (left)'},{c:TC.cs,t:'line',l:'Cash & investments (right)'}],
+  build(){
+   const cxCl=tCX.map((_,i)=>tCXe[i]?TC.cx+'66':TC.cx+'CC');
+   const lb=TQ.map((q,i)=>tCXe[i]?q+'*':q);
+   return{type:'bar',data:{labels:lb,datasets:[
+    {label:'CapEx',data:tCX,type:'bar',backgroundColor:cxCl,borderRadius:3,yAxisID:'y',order:2},
+    {label:'Cash',data:tCS,type:'line',borderColor:TC.cs,backgroundColor:TC.cs+'15',borderWidth:2.5,
+     pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:TC.cs,pointBorderWidth:2.5,tension:.3,fill:false,yAxisID:'y2',order:1},
+   ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+     label(c){const v=c.parsed.y;const e=tCXe[c.dataIndex]?' (est.)':'';
+      if(c.dataset.label==='CapEx')return`  CapEx: $${(v/1000).toFixed(2)}B${e}`;
+      return`  Cash & inv: $${(v/1000).toFixed(1)}B`}}}},
+    scales:{
+     x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+     y:{position:'left',grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(1)}B`}},
+     y2:{position:'right',grid:{drawOnChartArea:false},border:{display:false},ticks:{color:TC.cs,font:{size:10},callback:v=>`$${(v/1000).toFixed(0)}B`}},
+    },
+   }};} },
+ {title:'Quarterly Production & Deliveries · Q1 2017–Q2 2026',sub:'All vehicles are BEV · bars = deliveries · line = production',
+  axisR:'',nA:'',nB:'Q2 2026: production 451,758 (record Q2), deliveries 480,126 (record Q2). Deliveries exceeded production for the second consecutive quarter — drawing down the inventory built in Q1 2025. Q3 2025 was previously the delivery record (497,099) achieved by releasing the H2-2024 inventory build.',
+  leg:[{c:TC.D,t:'box',l:'Deliveries'},{c:TC.P,t:'line',l:'Production'}],
+  build(){return{type:'bar',data:{labels:TQDEL_Q,datasets:[
+   {label:'Deliveries',data:TQDELI,backgroundColor:TC.D+'99',borderRadius:2},
+   {label:'Production',data:TQPROD,type:'line',borderColor:TC.P,borderWidth:2.5,
+    pointRadius:2,pointBackgroundColor:'#fff',pointBorderColor:TC.P,pointBorderWidth:2,tension:.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+   plugins:{legend:{display:false},tooltip:{...ttB,callbacks:{
+    label:c=>`  ${c.dataset.label}: ${c.parsed.y.toLocaleString()}`,
+    afterBody(i){
+     const p=i.find(x=>x.dataset.label==='Production'),d=i.find(x=>x.dataset.label==='Deliveries');
+     if(p&&d){const g=p.parsed.y-d.parsed.y;return[`  Gap: ${g>=0?'+':''}${g.toLocaleString()}`];}
+     return[];
+    },
+   }}},
+   scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
+           y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`${(v/1000).toFixed(0)}k`}}},
+  }};} },
+];
+
+let tChart=null,curTSTab=0;
+function setTS(i){
+ curTSTab=i;
+ document.querySelectorAll('.stab').forEach((t,j)=>t.classList.toggle('active',j===i));
+ const c=TSCFG[i];
+ document.getElementById('tTitle').textContent=c.title;
+ document.getElementById('tSub').textContent=c.sub;
+ document.getElementById('tAxisR').textContent=c.axisR||'';
+ document.getElementById('tAxisR').style.color=i===4?TC.cs:A;
+ const nA=document.getElementById('tNA'),nB=document.getElementById('tNB');
+ nA.style.display=c.nA?'block':'none';if(c.nA)nA.textContent=c.nA;
+ nB.style.display=c.nB?'block':'none';if(c.nB)nB.textContent=c.nB;
+ document.getElementById('tLeg').innerHTML=c.leg.map(l=>`
+  <div class="li">
+   ${l.t==='line'?`<span class="sw-line" style="background:${l.c}"></span>`:`<span class="sw-box" style="background:${l.c}"></span>`}
+   ${l.l}</div>`).join('');
+ if(tChart){tChart.destroy();tChart=null;}
+ tChart=new Chart(document.getElementById('tChart').getContext('2d'),c.build());
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VIEW TOGGLE
+// ═══════════════════════════════════════════════════════════════════════
+function setView(v){
+ document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===(v==='peer'?0:1)));
+ document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===(v==='peer'?0:1)));
+ if(v==='tesla'&&!tChart)setTS(0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATA LOADING — fetch data.json, fall back to built-in dataset, then
+// apply any localStorage edits from the "Edit Data" panel on top.
+// ═══════════════════════════════════════════════════════════════════════
+function applyData(d){
+ YRS = d.years || [];
+ peers = (d.peers || []).map(p => ({...p}));
+ const tq = d.tesla_quarterly || {};
+ TQ = tq.labels || [];
+ tRA=tq.tRA||[]; tRE=tq.tRE||[]; tRS=tq.tRS||[];
+ tOM=tq.tOM||[]; tGM=tq.tGM||[]; tNI=tq.tNI||[]; tFCF=tq.tFCF||[]; tCX=tq.tCX||[]; tCS=tq.tCS||[];
+ tCXe = tCX.map(()=>false);
+ const td = d.tesla_deliveries || {};
+ TQDEL_Q = td.labels || []; TQPROD = td.production || []; TQDELI = td.deliveries || [];
+}
+
+function formatGeneratedAt(iso){
+ if(!iso)return 'unknown';
+ try{
+  return new Date(iso).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})+' UTC';
+ }catch(e){return iso;}
+}
+
+function loadStorageOverrides(){
+ try{
+  const sp=localStorage.getItem('peerData');
+  if(sp){
+   const saved=JSON.parse(sp);
+   saved.forEach(s=>{
+    const p=peers.find(x=>x.id===s.id);
+    if(p)Object.assign(p,s);
+   });
+  }
+  const st=localStorage.getItem('teslaQtrData');
+  if(st){
+   const d=JSON.parse(st);
+   if(d.tRA)tRA=d.tRA;if(d.tRE)tRE=d.tRE;if(d.tRS)tRS=d.tRS;
+   if(d.tOM)tOM=d.tOM;if(d.tGM)tGM=d.tGM;if(d.tNI)tNI=d.tNI;
+   if(d.tFCF)tFCF=d.tFCF;if(d.tCX)tCX=d.tCX;if(d.tCS)tCS=d.tCS;
+  }
+ }catch(e){console.warn('Storage load error',e);}
+}
+
+function saveToStorage(){
+ localStorage.setItem('peerData',JSON.stringify(peers));
+ localStorage.setItem('teslaQtrData',JSON.stringify({tRA,tRE,tRS,tOM,tGM,tNI,tFCF,tCX,tCS}));
+}
+
+async function init(){
+ let data, isFallback=false;
+ try{
+  const res=await fetch('data.json',{cache:'no-store'});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  data=await res.json();
+ }catch(e){
+  console.warn('data.json not available, using built-in fallback dataset:',e);
+  data=FALLBACK_DATA;
+  isFallback=true;
+ }
+
+ applyData(data);
+
+ // Snapshot of the fetched/fallback data — this is what "Reset to defaults" restores.
+ _defaultPeers=JSON.parse(JSON.stringify(peers));
+ _defaultTQ={tRA:[...tRA],tRE:[...tRE],tRS:[...tRS],tOM:[...tOM],tGM:[...tGM],tNI:[...tNI],tFCF:[...tFCF],tCX:[...tCX],tCS:[...tCS]};
+
+ // Manual edits saved via the editor always win, applied on top.
+ loadStorageOverrides();
+
+ document.getElementById('lastUpdated').textContent = isFallback
+  ? 'running locally — data.json not found'
+  : formatGeneratedAt(data.generated_at);
+ if(isFallback) document.getElementById('fallbackNotice').style.display='block';
+
+ vis = new Set(peers.map(p=>p.id));
+ buildCompanyToggle();
+ setPM('margin');
+
+ document.getElementById('loadingOverlay').style.display='none';
+}
+
+init();
+</script>
+
+<!-- ═══ EDITOR MODAL ═══════════════════════════════════════════════════ -->
+<style>
+.edit-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center}
+.edit-bg.open{display:flex}
+.edit-modal{background:#fff;border-radius:14px;width:min(1100px,96vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.25);overflow:hidden}
+.edit-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #E5E7EB;flex-shrink:0}
+.edit-hdr h2{font-size:15px;font-weight:700;color:#111827}
+.edit-close{width:28px;height:28px;border-radius:50%;border:none;background:#F3F4F6;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#6B7280}
+.edit-tabs{display:flex;gap:0;border-bottom:2px solid #E5E7EB;padding:0 20px;flex-shrink:0}
+.etab{padding:8px 16px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit}
+.etab.active{color:#111827;border-bottom-color:#7C3AED;font-weight:600}
+.edit-body{flex:1;overflow-y:auto;padding:16px 20px}
+.co-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.co-pill{padding:5px 12px;font-size:11px;font-weight:500;border-radius:20px;border:1.5px solid #E5E7EB;cursor:pointer;background:#fff;color:#6B7280;font-family:inherit;transition:all .12s}
+.co-pill.sel{color:#fff;border-color:transparent}
+.edit-note{font-size:11px;color:#9CA3AF;margin-bottom:10px;line-height:1.5}
+.edit-grid-wrap{overflow-x:auto}
+.edit-grid{border-collapse:collapse;font-size:11px;min-width:600px;width:100%}
+.edit-grid th{background:#F8FAFC;padding:6px 8px;text-align:left;font-weight:600;color:#374151;border:1px solid #E5E7EB;white-space:nowrap;position:sticky;top:0}
+.edit-grid td{border:1px solid #F0F2F5;padding:2px 3px}
+.edit-grid .row-label{background:#F8FAFC;padding:6px 8px;font-weight:600;color:#374151;white-space:nowrap;position:sticky;left:0;z-index:1;border:1px solid #E5E7EB}
+.edit-grid input{width:72px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;font-family:monospace;text-align:right;outline:none;background:#FAFAFA}
+.edit-grid input:focus{border-color:#7C3AED;background:#fff}
+.edit-grid input.changed{background:#EDE9FE;border-color:#7C3AED}
+.edit-ftr{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid #E5E7EB;flex-shrink:0}
+.edit-btn{padding:8px 16px;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;font-family:inherit;border:none;transition:all .12s}
+.edit-btn.primary{background:#7C3AED;color:#fff}
+.edit-btn.secondary{background:#F3F4F6;color:#374151}
+.edit-btn.danger{background:#FEF2F2;color:#991B1B;border:1px solid #FCA5A5}
+.save-msg{font-size:11px;color:#059669;font-weight:500}
+</style>
+
+<div class="edit-bg" id="editBg">
+ <div class="edit-modal">
+  <div class="edit-hdr">
+   <h2>✏ Edit Data</h2>
+   <div style="display:flex;align-items:center;gap:10px">
+    <span class="save-msg" id="saveMsg" style="display:none">✓ Saved to browser</span>
+    <button class="edit-close" onclick="closeEditor()">✕</button>
+   </div>
+  </div>
+  <div class="edit-tabs">
+   <button class="etab active" onclick="setEditTab('peer')">Annual Peer Data</button>
+   <button class="etab" onclick="setEditTab('tsla')">Tesla Quarterly</button>
+  </div>
+  <div class="edit-body">
+   <!-- PEER TAB -->
+   <div id="edit-peer">
+    <p class="edit-note">Select a company, edit values, then click Save. Blank = no data. Changes auto-save to your browser — no file replacement needed. These edits persist across the weekly auto-update since they're applied on top of data.json.</p>
+    <div class="co-pills" id="editCoPills"></div>
+    <div class="edit-grid-wrap"><table class="edit-grid" id="editGrid"></table></div>
+   </div>
+   <!-- TESLA QUARTERLY TAB -->
+   <div id="edit-tsla" style="display:none">
+    <p class="edit-note">Tesla quarterly segment revenue ($M) — not auto-fetched. Other quarterly metrics (margins, NI, FCF, CapEx, cash) update via the weekly GitHub Actions run. Add new quarters by extending the arrays — contact me if you need a structural change.</p>
+    <div class="edit-grid-wrap"><table class="edit-grid" id="tslaGrid"></table></div>
+   </div>
+  </div>
+  <div class="edit-ftr">
+   <button class="edit-btn danger" onclick="resetData()">↺ Reset all to fetched defaults</button>
+   <div style="display:flex;gap:8px">
+    <button class="edit-btn secondary" onclick="closeEditor()">Close</button>
+    <button class="edit-btn primary" onclick="saveEditor()">Save &amp; Update Charts</button>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// EDITOR
+// ═══════════════════════════════════════════════════════════════════════
+const PEER_METRICS=[
+ {key:'margin',  label:'Op Margin %'},
+ {key:'revenue', label:'Revenue $B'},
+ {key:'ni',      label:'Net Income $B'},
+ {key:'fcf',     label:'FCF $B'},
+ {key:'capex',   label:'CapEx $B'},
+ {key:'del_total',label:'Total Del (k)'},
+ {key:'del_bev', label:'BEV Del (k)'},
+];
+const TSLA_Q_METRICS=[
+ {key:'tRA',label:'Auto Rev $M'},
+ {key:'tRE',label:'Energy Rev $M'},
+ {key:'tRS',label:'Services Rev $M'},
+ {key:'tOM',label:'Op Margin %'},
+ {key:'tGM',label:'Gross Margin %'},
+ {key:'tNI',label:'Net Income $M'},
+ {key:'tFCF',label:'FCF $M'},
+ {key:'tCX',label:'CapEx $M'},
+ {key:'tCS',label:'Cash $M'},
+];
+function getTslaQData(){return{tRA,tRE,tRS,tOM,tGM,tNI,tFCF,tCX,tCS};}
+
+let editTab='peer', editCo='tesla';
+let _defaultPeers=[], _defaultTQ={};
+
+function openEditor(){
+ buildCoPills();
+ renderPeerGrid(editCo);
+ document.getElementById('editBg').classList.add('open');
+ document.getElementById('saveMsg').style.display='none';
+}
+function closeEditor(){document.getElementById('editBg').classList.remove('open');}
+
+function setEditTab(t){
+ editTab=t;
+ document.querySelectorAll('.etab').forEach((b,i)=>b.classList.toggle('active',['peer','tsla'][i]===t));
+ document.getElementById('edit-peer').style.display=t==='peer'?'block':'none';
+ document.getElementById('edit-tsla').style.display=t==='tsla'?'block':'none';
+ if(t==='tsla')renderTslaGrid();
+}
+
+function buildCoPills(){
+ const wrap=document.getElementById('editCoPills');
+ wrap.innerHTML='';
+ peers.forEach(p=>{
+  const b=document.createElement('button');
+  b.className='co-pill'+(p.id===editCo?' sel':'');
+  b.textContent=p.name;
+  if(p.id===editCo)b.style.cssText=`background:${p.color};border-color:${p.color}`;
+  b.onclick=()=>{editCo=p.id;buildCoPills();renderPeerGrid(p.id);};
+  wrap.appendChild(b);
+ });
+}
+
+function renderPeerGrid(coId){
+ const p=peers.find(x=>x.id===coId);
+ const tbl=document.getElementById('editGrid');
+ // Header
+ let html=`<thead><tr><th>Metric</th>${YRS.map(y=>`<th>${y}</th>`).join('')}</tr></thead><tbody>`;
+ PEER_METRICS.forEach(m=>{
+  html+=`<tr><td class="row-label">${m.label}</td>`;
+  YRS.forEach((_,i)=>{
+   const v=p[m.key]?.[i];
+   const val=(v===null||v===undefined)?'':v;
+   html+=`<td><input type="number" step="any" value="${val}" data-co="${coId}" data-metric="${m.key}" data-idx="${i}" onchange="markChanged(this)"/></td>`;
+  });
+  html+=`</tr>`;
+ });
+ html+=`</tbody>`;
+ tbl.innerHTML=html;
+}
+
+function renderTslaGrid(){
+ const d=getTslaQData();
+ const tbl=document.getElementById('tslaGrid');
+ let html=`<thead><tr><th>Metric</th>${TQ.map(q=>`<th>${q}</th>`).join('')}</tr></thead><tbody>`;
+ TSLA_Q_METRICS.forEach(m=>{
+  const arr=d[m.key]||[];
+  html+=`<tr><td class="row-label">${m.label}</td>`;
+  TQ.forEach((_,i)=>{
+   const v=arr[i];
+   const val=(v===null||v===undefined)?'':v;
+   html+=`<td><input type="number" step="any" value="${val}" data-tslakey="${m.key}" data-idx="${i}" onchange="markChanged(this)"/></td>`;
+  });
+  html+=`</tr>`;
+ });
+ html+=`</tbody>`;
+ tbl.innerHTML=html;
+}
+
+function markChanged(inp){inp.classList.add('changed');}
+
+function saveEditor(){
+ // Save peer grid
+ document.querySelectorAll('#editGrid input').forEach(inp=>{
+  const p=peers.find(x=>x.id===inp.dataset.co);
+  if(!p)return;
+  const key=inp.dataset.metric;
+  const idx=+inp.dataset.idx;
+  const v=inp.value===''?null:parseFloat(inp.value);
+  if(!p[key])p[key]=[];
+  p[key][idx]=v;
+  inp.classList.remove('changed');
+ });
+ // Save tesla quarterly grid
+ const d=getTslaQData();
+ document.querySelectorAll('#tslaGrid input').forEach(inp=>{
+  const key=inp.dataset.tslakey;
+  const idx=+inp.dataset.idx;
+  if(!key)return;
+  const v=inp.value===''?null:parseFloat(inp.value);
+  d[key][idx]=v;
+  inp.classList.remove('changed');
+ });
+ // Apply tesla arrays back
+ if(d.tRA)tRA=d.tRA;if(d.tRE)tRE=d.tRE;if(d.tRS)tRS=d.tRS;
+ if(d.tOM)tOM=d.tOM;if(d.tGM)tGM=d.tGM;if(d.tNI)tNI=d.tNI;
+ if(d.tFCF)tFCF=d.tFCF;if(d.tCX)tCX=d.tCX;if(d.tCS)tCS=d.tCS;
+ // Persist
+ saveToStorage();
+ // Refresh charts
+ if(FIN_METRICS.includes(curM)||curM==='deliveries')renderPeer();
+ if(tChart){tChart.destroy();tChart=null;setTS(curTSTab);}
+ // Flash save message
+ const msg=document.getElementById('saveMsg');
+ msg.style.display='inline';
+ setTimeout(()=>msg.style.display='none',2500);
+}
+
+function resetData(){
+ if(!confirm('Reset ALL data to the fetched defaults (data.json)? This removes all manual edits saved in the browser.'))return;
+ localStorage.removeItem('peerData');
+ localStorage.removeItem('teslaQtrData');
+ _defaultPeers.forEach(dp=>{const p=peers.find(x=>x.id===dp.id);if(p)Object.assign(p,JSON.parse(JSON.stringify(dp)));});
+ tRA=[..._defaultTQ.tRA];tRE=[..._defaultTQ.tRE];tRS=[..._defaultTQ.tRS];
+ tOM=[..._defaultTQ.tOM];tGM=[..._defaultTQ.tGM];tNI=[..._defaultTQ.tNI];
+ tFCF=[..._defaultTQ.tFCF];tCX=[..._defaultTQ.tCX];tCS=[..._defaultTQ.tCS];
+ renderPeerGrid(editCo);renderTslaGrid();
+ if(FIN_METRICS.includes(curM)||curM==='deliveries')renderPeer();
+ if(tChart){tChart.destroy();tChart=null;setTS(curTSTab);}
+ const msg=document.getElementById('saveMsg');
+ msg.textContent='↺ Reset to defaults';msg.style.display='inline';
+ setTimeout(()=>{msg.style.display='none';msg.textContent='✓ Saved to browser';},2500);
+}
+</script>
+</body>
+</html>
