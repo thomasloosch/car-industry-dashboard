@@ -64,6 +64,8 @@ CURRENCY_HINTS = {
 FX_FALLBACK_TO_USD = {'USD': 1.0, 'EUR': 1.08, 'CNY': 0.14}
 
 DELIVERIES_NOTE = "Updated manually — see Edit Data panel in dashboard"
+LAYOFFS_NOTE = ("Updated manually and intentionally sparse — most public layoff news is a multi-year "
+                 "target or voluntary program, not a clean single-year headcount figure. See Edit Data panel.")
 
 # ═══════════════════════════════════════════════════════════════════════
 # SEED DATA — the dashboard's original built-in dataset. Used as the
@@ -84,6 +86,7 @@ SEED_PEERS = {
         'del_total': [103, 245, 367, 500, 936, 1314, 1809, 1789, 1636, 817],
         'del_bev':   [103, 245, 367, 500, 936, 1314, 1809, 1789, 1636, 817],
         'del_dm':    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        'layoffs':   [None, None, None, None, None, None, None, 14000, None, None],
     },
     'ford': {
         'dash': [5, 3],
@@ -95,6 +98,7 @@ SEED_PEERS = {
         'del_total': [5600, 5400, 5400, 4200, 3900, 4200, 4400, 4300, 4100, None],
         'del_bev':   [0, 0, 0, 0, 3, 80, 72, 87, 75, None],
         'del_dm':    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'gm': {
         'dash': [],
@@ -106,6 +110,7 @@ SEED_PEERS = {
         'del_total': [9600, 8900, 7700, 6800, 6700, 5900, 6200, 6400, 6200, None],
         'del_bev':   [0, 0, 0, 0, 26, 39, 75, 130, 110, 57],
         'del_dm':    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'vw': {
         'dash': [6, 3],
@@ -117,6 +122,7 @@ SEED_PEERS = {
         'del_total': [10742, 10834, 10975, 9305, 8882, 8263, 9237, 9038, 8800, 4130],
         'del_bev':   [29, 80, 134, 231, 453, 572, 771, 866, 900, 438],
         'del_dm':    [0, 0, 0, 35, 95, 145, 193, 295, 350, 246],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'bmw': {
         'dash': [],
@@ -128,6 +134,7 @@ SEED_PEERS = {
         'del_total': [2464, 2490, 2520, 2326, 2521, 2399, 2554, 2437, 2350, 1157],
         'del_bev':   [33, 37, 25, 44, 104, 216, 376, 427, 440, 204],
         'del_dm':    [35, 55, 60, 55, 65, 95, 130, 150, 175, 91],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'mercedes': {
         'dash': [4, 4],
@@ -139,6 +146,7 @@ SEED_PEERS = {
         'del_total': [2289, 2310, 2340, 2165, 2094, 2041, 2042, 1850, 1750, 1012],
         'del_bev':   [1, 2, 5, 20, 67, 118, 230, 205, 190, 121],
         'del_dm':    [10, 20, 25, 30, 40, 100, 160, 175, 180, None],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'stellantis': {
         'dash': [8, 3, 2, 3],
@@ -150,6 +158,7 @@ SEED_PEERS = {
         'del_total': [None, None, None, None, 6100, 5600, 6200, 5800, 5400, 2961],
         'del_bev':   [None, None, None, None, 44, 86, 100, 110, 90, None],
         'del_dm':    [None, None, None, None, 200, 350, 500, 560, 520, None],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
     'byd': {
         'dash': [],
@@ -161,6 +170,7 @@ SEED_PEERS = {
         'del_total': [447, 521, 462, 427, 593, 1868, 3024, 4272, 4272, None],
         'del_bev':   [113, 228, 219, 182, 325, 911, 1575, 1765, 1900, 975],
         'del_dm':    [334, 293, 243, 245, 268, 957, 1449, 2507, 2600, None],
+        'layoffs':   [None, None, None, None, None, None, None, None, None, None],
     },
 }
 
@@ -575,6 +585,7 @@ def build_seed_dataset():
             'del_total': list(seed['del_total']),
             'del_bev': list(seed['del_bev']),
             'del_dm': list(seed['del_dm']),
+            'layoffs': list(seed['layoffs']),
             'fetch_error': False,
         })
     return {
@@ -582,6 +593,7 @@ def build_seed_dataset():
         'years': list(SEED_YEARS),
         'peers': peers,
         'deliveries_note': DELIVERIES_NOTE,
+        'layoffs_note': LAYOFFS_NOTE,
         'tesla_quarterly': {k: list(v) for k, v in SEED_TESLA_QUARTERLY.items()},
         'tesla_deliveries': {k: list(v) for k, v in SEED_TESLA_DELIVERIES.items()},
         'highlights_note': HIGHLIGHTS_NOTE,
@@ -640,7 +652,7 @@ def main():
         existing_peer = peers_by_id.get(pid, {})
         merged = merge_annual(existing_years, existing_peer, fetched_per_company.get(pid, {}), years_labels)
         del_merged = merge_static_by_label(existing_years, existing_peer, years_labels,
-                                            ('del_total', 'del_bev', 'del_dm'))
+                                            ('del_total', 'del_bev', 'del_dm', 'layoffs'))
         new_peers.append({
             'id': pid,
             'name': meta['name'],
@@ -683,6 +695,7 @@ def main():
         'years': years_labels,
         'peers': new_peers,
         'deliveries_note': DELIVERIES_NOTE,
+        'layoffs_note': LAYOFFS_NOTE,
         'tesla_quarterly': tesla_quarterly,
         'tesla_deliveries': tesla_deliveries,
         'highlights_note': HIGHLIGHTS_NOTE,

@@ -95,6 +95,7 @@ h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
         <button class="btn" onclick="setPM('fcf')">Free Cash Flow $B</button>
         <button class="btn" onclick="setPM('capex')">CapEx $B</button>
         <button class="btn" onclick="setPM('deliveries')">Deliveries</button>
+        <button class="btn" onclick="setPM('layoffs')">Layoffs</button>
       </div>
     </div>
     <div id="delSubWrap" style="display:none">
@@ -173,7 +174,8 @@ const FALLBACK_DATA = {
    capex:   [3.4,2.1,1.33,1.49,6.48,7.0,8.9,9.3,8.5,8.3],
    del_total:[103,245,367,500,936,1314,1809,1789,1636,817],
    del_bev:  [103,245,367,500,936,1314,1809,1789,1636,817],
-   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+   del_dm:   [0,0,0,0,0,0,0,0,0,0],
+   layoffs:  [null,null,null,null,null,null,null,14000,null,null], fetch_error:false},
   {id:'ford',name:'Ford',color:'#1D4ED8',dash:[5,3],
    margin:  [3.5,2.0,-0.1,0.5,3.6,4.0,3.1,2.8,-4.9,6.6],
    revenue: [156.8,160.3,155.9,127.1,136.3,158.1,176.2,185.0,187.3,91.5],
@@ -182,7 +184,8 @@ const FALLBACK_DATA = {
    capex:   [7.0,7.8,7.0,5.7,6.8,7.7,8.3,8.4,9.0,null],
    del_total:[5600,5400,5400,4200,3900,4200,4400,4300,4100,null],
    del_bev:  [0,0,0,0,3,80,72,87,75,null],
-   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+   del_dm:   [0,0,0,0,0,0,0,0,0,0],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'gm',name:'GM',color:'#0D9488',dash:[],
    margin:  [8.0,7.5,7.5,3.5,11.3,9.2,7.2,7.5,5.5,9.0],
    revenue: [145.6,147.0,137.2,122.5,127.0,156.7,171.8,187.4,190.0,91.6],
@@ -191,7 +194,8 @@ const FALLBACK_DATA = {
    capex:   [7.0,8.0,7.5,5.5,8.0,7.0,8.5,7.5,7.0,null],
    del_total:[9600,8900,7700,6800,6700,5900,6200,6400,6200,null],
    del_bev:  [0,0,0,0,26,39,75,130,110,57],
-   del_dm:   [0,0,0,0,0,0,0,0,0,0], fetch_error:false},
+   del_dm:   [0,0,0,0,0,0,0,0,0,0],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'vw',name:'Volkswagen',color:'#EA580C',dash:[6,3],
    margin:  [6.8,6.7,4.2,2.9,7.9,8.1,7.0,5.9,2.8,3.8],
    revenue: [260.7,278.5,282.7,254.3,296.0,308.6,348.0,351.0,343.0,170.6],
@@ -200,7 +204,8 @@ const FALLBACK_DATA = {
    capex:   [15.8,17.7,20.1,16.0,17.7,17.9,20.5,19.5,16.2,null],
    del_total:[10742,10834,10975,9305,8882,8263,9237,9038,8800,4130],
    del_bev:  [29,80,134,231,453,572,771,866,900,438],
-   del_dm:   [0,0,0,35,95,145,193,295,350,246], fetch_error:false},
+   del_dm:   [0,0,0,35,95,145,193,295,350,246],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'bmw',name:'BMW',color:'#2563EB',dash:[],
    margin:  [8.9,7.2,4.0,3.3,10.3,8.6,9.8,8.8,6.5,3.6],
    revenue: [111.5,115.1,116.6,112.4,131.6,150.2,167.8,154.2,140.4,67.2],
@@ -209,7 +214,8 @@ const FALLBACK_DATA = {
    capex:   [5.7,5.9,6.2,5.1,6.5,6.8,8.1,7.6,7.0,null],
    del_total:[2464,2490,2520,2326,2521,2399,2554,2437,2350,1157],
    del_bev:  [33,37,25,44,104,216,376,427,440,204],
-   del_dm:   [35,55,60,55,65,95,130,150,175,91], fetch_error:false},
+   del_dm:   [35,55,60,55,65,95,130,150,175,91],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'mercedes',name:'Mercedes',color:'#525252',dash:[4,4],
    margin:  [9.9,7.8,4.3,3.5,12.9,13.7,12.9,9.3,6.2,4.0],
    revenue: [185.7,197.7,193.3,176.0,198.8,161.3,165.7,157.7,142.7,68.7],
@@ -218,7 +224,8 @@ const FALLBACK_DATA = {
    capex:   [7.3,8.3,7.8,6.3,7.1,4.7,5.2,4.9,4.3,null],
    del_total:[2289,2310,2340,2165,2094,2041,2042,1850,1750,1012],
    del_bev:  [1,2,5,20,67,118,230,205,190,121],
-   del_dm:   [10,20,25,30,40,100,160,175,180,null], fetch_error:false},
+   del_dm:   [10,20,25,30,40,100,160,175,180,null],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'stellantis',name:'Stellantis',color:'#9333EA',dash:[8,3,2,3],
    margin:  [null,null,null,null,11.8,13.6,12.8,5.5,-0.5,2.2],
    revenue: [null,null,null,null,180.0,189.1,204.8,169.9,165.6,88.0],
@@ -227,7 +234,8 @@ const FALLBACK_DATA = {
    capex:   [null,null,null,null,8.9,7.4,7.9,6.3,5.2,null],
    del_total:[null,null,null,null,6100,5600,6200,5800,5400,2961],
    del_bev:  [null,null,null,null,44,86,100,110,90,null],
-   del_dm:   [null,null,null,null,200,350,500,560,520,null], fetch_error:false},
+   del_dm:   [null,null,null,null,200,350,500,560,520,null],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
   {id:'byd',name:'BYD',color:'#16A34A',dash:[],
    margin:  [2.5,2.0,1.8,2.2,2.5,5.4,6.4,7.0,4.8,null],
    revenue: [15.6,19.8,18.1,22.7,33.5,62.8,84.3,107.2,110.1,null],
@@ -236,9 +244,11 @@ const FALLBACK_DATA = {
    capex:   [2.5,3.6,4.0,4.1,7.3,7.4,11.2,13.8,12.3,null],
    del_total:[447,521,462,427,593,1868,3024,4272,4272,null],
    del_bev:  [113,228,219,182,325,911,1575,1765,1900,975],
-   del_dm:   [334,293,243,245,268,957,1449,2507,2600,null], fetch_error:false},
+   del_dm:   [334,293,243,245,268,957,1449,2507,2600,null],
+   layoffs:  [null,null,null,null,null,null,null,null,null,null], fetch_error:false},
  ],
  deliveries_note: "Updated manually — see Edit Data panel in dashboard",
+ layoffs_note: "Updated manually and intentionally sparse — most public layoff news is a multi-year target or voluntary program, not a clean single-year headcount figure. See Edit Data panel.",
  tesla_quarterly: {
   labels: ['Q1 22','Q2 22','Q3 22','Q4 22','Q1 23','Q2 23','Q3 23','Q4 23',
            'Q1 24','Q2 24','Q3 24','Q4 24','Q1 25','Q2 25','Q3 25','Q4 25','Q1 26','Q2 26'],
@@ -280,7 +290,6 @@ const FALLBACK_DATA = {
 // ═══════════════════════════════════════════════════════════════════════
 // METRIC + DELIVERY CONFIGS (static — don't depend on fetched data)
 // ═══════════════════════════════════════════════════════════════════════
-const FIN_METRICS = ['margin','revenue','ni','fcf','capex'];
 let curDelSub = 'total';
 
 const MC = {
@@ -313,6 +322,12 @@ const MC = {
   fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
   note:'Tesla H1 2026 CapEx: Q1 $2.5B + Q2 $5.8B = $8.3B. Q2 alone (+142% YoY) driven by AI chip infrastructure, Cybercab line, and a planned chip fabrication facility announced on the earnings call. 2026 on track to be Tesla\'s largest-ever CapEx year by a wide margin. VW includes all brands and TRATON trucks — not comparable to single-brand peers. European figures approximate EUR conversions.',
   info:'',
+ },
+ layoffs:{key:'layoffs',title:'Announced Workforce Reductions — {YEARS}',
+  sub:'Employees laid off / targeted for reduction, attributed to the year announced. Manually curated, intentionally sparse.',
+  fmt:v=>`${v.toLocaleString()}`,yTick:v=>v.toLocaleString(),
+  note:'Deliberately incomplete: most public layoff news is either a multi-year target (e.g. VW\'s Dec 2024 agreement covers cuts through 2030, not one year), a voluntary-departure program still in progress, or a single-plant/regional action — not a clean "N employees let go this year" figure comparable across companies. Only points with a reasonably concrete, well-sourced single-period figure are filled in; the rest are left blank rather than force an imprecise year onto the chart. Edit via ✏ Edit Data as better-sourced figures become available.',
+  info:'Tesla 2024: ~14,000 (10%+ of global workforce, announced April 2024, confirmed by internal data showing ≥14% reduction by June 2024).',
  },
 };
 
@@ -399,7 +414,7 @@ function setPM(m){
  curM=m;
  document.getElementById('delSubWrap').style.display=m==='deliveries'?'block':'none';
  document.querySelectorAll('#sec-peer .btn-group:first-of-type .btn').forEach((b,i)=>
-  b.classList.toggle('active',['margin','revenue','ni','fcf','capex','deliveries'][i]===m));
+  b.classList.toggle('active',['margin','revenue','ni','fcf','capex','deliveries','layoffs'][i]===m));
  renderPeer();
 }
 
@@ -766,6 +781,7 @@ const PEER_METRICS=[
  {key:'capex',   label:'CapEx $B'},
  {key:'del_total',label:'Total Del (k)'},
  {key:'del_bev', label:'BEV Del (k)'},
+ {key:'layoffs', label:'Layoffs'},
 ];
 const TSLA_Q_METRICS=[
  {key:'tRA',label:'Auto Rev $M'},
@@ -879,7 +895,7 @@ function saveEditor(){
  // Persist
  saveToStorage();
  // Refresh charts
- if(FIN_METRICS.includes(curM)||curM==='deliveries')renderPeer();
+ renderPeer();
  if(tChart){tChart.destroy();tChart=null;setTS(curTSTab);}
  // Flash save message
  const msg=document.getElementById('saveMsg');
@@ -896,7 +912,7 @@ function resetData(){
  tOM=[..._defaultTQ.tOM];tGM=[..._defaultTQ.tGM];tNI=[..._defaultTQ.tNI];
  tFCF=[..._defaultTQ.tFCF];tCX=[..._defaultTQ.tCX];tCS=[..._defaultTQ.tCS];
  renderPeerGrid(editCo);renderTslaGrid();
- if(FIN_METRICS.includes(curM)||curM==='deliveries')renderPeer();
+ renderPeer();
  if(tChart){tChart.destroy();tChart=null;setTS(curTSTab);}
  const msg=document.getElementById('saveMsg');
  msg.textContent='↺ Reset to defaults';msg.style.display='inline';

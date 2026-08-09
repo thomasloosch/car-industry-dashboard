@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T16:06:01Z",
+  "generated_at": "2026-08-09T19:12:47Z",
   "years": [
     "2017",
     "2018",
@@ -114,6 +114,18 @@
         0,
         0
       ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        14000,
+        null,
+        null
+      ],
       "fetch_error": false
     },
     {
@@ -220,6 +232,18 @@
         0,
         0
       ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "fetch_error": false
     },
     {
@@ -322,6 +346,18 @@
         0,
         0,
         0
+      ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
       ],
       "fetch_error": false
     },
@@ -429,6 +465,18 @@
         350,
         246
       ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "fetch_error": false
     },
     {
@@ -531,6 +579,18 @@
         150,
         175,
         91
+      ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
       ],
       "fetch_error": true
     },
@@ -636,6 +696,18 @@
         160,
         175,
         180,
+        null
+      ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
         null
       ],
       "fetch_error": false
@@ -746,6 +818,18 @@
         520,
         null
       ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "fetch_error": false
     },
     {
@@ -849,10 +933,23 @@
         2600,
         null
       ],
+      "layoffs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "fetch_error": false
     }
   ],
   "deliveries_note": "Updated manually \u2014 see Edit Data panel in dashboard",
+  "layoffs_note": "Updated manually and intentionally sparse \u2014 most public layoff news is a multi-year target or voluntary program, not a clean single-year headcount figure. See Edit Data panel.",
   "tesla_quarterly": {
     "labels": [
       "Q1 22",

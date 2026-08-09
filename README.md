@@ -2,7 +2,8 @@
 
 A self-updating dashboard comparing Tesla against 7 other automakers (Ford,
 GM, Volkswagen, BMW, Mercedes, Stellantis, BYD) across margin, revenue, net
-income, free cash flow, CapEx, and deliveries — 2017 through H1 2026.
+income, free cash flow, CapEx, deliveries, and announced layoffs — 2017
+through H1 2026.
 
 Financial data refreshes automatically every Sunday via GitHub Actions and
 [yfinance](https://github.com/ranaroussi/yfinance). No API key, no server,
@@ -66,15 +67,20 @@ discard your local edits and go back to what the pipeline fetched.
   [SEC's fair-access policy](https://www.sec.gov/os/webmaster-faq#developers).
 - Delivery figures for every other company (`del_total`, `del_bev`,
   `del_dm`), Tesla's *annual* rollup of the same, Tesla's segment revenue
-  breakdown, and the 5 header stat cards (`highlights` in `data.json`) are
-  **not** fetched automatically — there's no reliable free API for them
-  covering all 8 companies, and some of the stat-card sub-copy (YoY deltas,
-  "ahead of Tesla on BEV", "recovering") is editorial judgment rather than
-  something computable from the numbers. All of it carries forward
-  untouched from the dashboard's built-in dataset until edited by hand —
-  delivery figures and Tesla segment revenue via the **✏ Edit Data** panel,
-  the `highlights` array by editing `data.json` directly (not yet exposed
-  in the editor UI).
+  breakdown, the `layoffs` metric, and the 5 header stat cards (`highlights`
+  in `data.json`) are **not** fetched automatically — there's no reliable
+  free API covering all 8 companies for any of these, and some of it
+  (stat-card sub-copy like "ahead of Tesla on BEV"; layoff figures, which
+  are usually multi-year targets or voluntary programs rather than a clean
+  single-year count) is closer to editorial judgment than something
+  computable from a feed. All of it carries forward untouched from the
+  dashboard's built-in dataset until edited by hand — delivery figures,
+  layoffs, and Tesla segment revenue via the **✏ Edit Data** panel, the
+  `highlights` array by editing `data.json` directly (not yet exposed in
+  the editor UI). The `layoffs` metric ships almost entirely blank on
+  purpose (see `layoffs_note` in `data.json`) — only Tesla's well-corroborated
+  ~14,000 (April 2024) is pre-filled; everything else needs a source you
+  trust before you add it.
 - Chart title date ranges (e.g. "2017–2025", "Q1 2022–Q2 2026") are
   computed from the actual data on load, so they keep pace as the
   pipeline adds new years/quarters. The prose inside chart notes/info
