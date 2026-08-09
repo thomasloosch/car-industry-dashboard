@@ -74,7 +74,7 @@ h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
     <button class="vtab" onclick="setView('tesla')">Tesla Deep Dive</button>
   </div>
   <button class="upd-btn" style="border-color:#7C3AED;color:#6D28D9;background:#F5F3FF" onclick="openEditor()">✏ Edit Data</button>
-  <span style="font-size:11px;color:#CBD5E1">H1 26* = half-year · Delivery data updated manually each quarter</span>
+  <span style="font-size:11px;color:#CBD5E1">H1 26* = half-year · Tesla quarterly production/deliveries auto-fetched from SEC filings · other delivery data updated manually</span>
 </div>
 
 <div class="warn-banner" id="fallbackNotice">⚠ Running locally — <code>data.json</code> not found (or failed to load). Showing the last built-in dataset instead. This is expected if you're opening this file directly (<code>file://</code>) rather than serving it, or if the GitHub Actions workflow hasn't run yet. You can still use <strong>✏ Edit Data</strong> below to paste in values manually — your edits are saved to this browser and persist across reloads.</div>
@@ -154,6 +154,7 @@ let tRA=[], tRE=[], tRS=[], tGM=[], tOM=[], tNI=[], tFCF=[], tCX=[], tCS=[];
 let tCXe = [];
 let TQDEL_Q=[], TQPROD=[], TQDELI=[];
 let highlights = [];
+let teslaDeliveriesFetchError = false;
 
 // ═══════════════════════════════════════════════════════════════════════
 // OFFLINE FALLBACK — used only if data.json can't be fetched (e.g. opened
@@ -263,7 +264,8 @@ const FALLBACK_DATA = {
   deliveries:[25000,22000,26150,29870,30300,40740,83500,90700,63019,95356,97186,112095,
               88496,90891,139593,180667,184877,201304,241391,308600,
               310048,254695,343830,405278,422875,466140,435059,484507,
-              386810,443956,462890,495570,336681,384122,497099,418227,336681,480126],
+              386810,443956,462890,495570,336681,384122,497099,418227,358023,480126],
+  fetch_error:false,
  },
  highlights_note: "Updated manually — edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)",
  highlights: [
@@ -583,6 +585,7 @@ function applyData(d){
  tCXe = tCX.map(()=>false);
  const td = d.tesla_deliveries || {};
  TQDEL_Q = td.labels || []; TQPROD = td.production || []; TQDELI = td.deliveries || [];
+ teslaDeliveriesFetchError = !!td.fetch_error;
  highlights = d.highlights || [];
 }
 
@@ -600,13 +603,14 @@ function renderHighlights(){
 }
 
 // Surfaces peers whose most recent fetch failed (fetch_error:true in
-// data.json) — previously only a small "⚠" in the peer-chart legend.
+// data.json) — previously only a small "⚠" in the peer-chart legend — plus
+// a failed Tesla SEC delivery-report scrape, which isn't a `peers` entry.
 function renderFetchIssues(){
- const failed = peers.filter(p=>p.fetch_error);
+ const failed = peers.filter(p=>p.fetch_error).map(p=>p.name);
+ if(teslaDeliveriesFetchError) failed.push('Tesla quarterly deliveries (SEC)');
  const el = document.getElementById('fetchIssueNotice');
  if(!failed.length){el.style.display='none';return;}
- const names = failed.map(p=>p.name).join(', ');
- el.innerHTML = `⚠ This week's data fetch failed for <strong>${names}</strong> — showing their last known-good values instead (never blanked out). This is usually temporary (common for OTC ADR tickers); check the repo's Actions tab or open issues for details.`;
+ el.innerHTML = `⚠ This week's data fetch failed for <strong>${failed.join(', ')}</strong> — showing their last known-good values instead (never blanked out). This is usually temporary (common for OTC ADR tickers, or a blocked SEC EDGAR request); check the repo's Actions tab or open issues for details.`;
  el.style.display='block';
 }
 

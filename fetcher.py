@@ -4,19 +4,39 @@
 Merge rule: a fetched value only replaces what's already in data.json when it is
 present and not NaN. Missing/failed values fall back to whatever was already
 recorded (data.json on disk, or the built-in SEED on the very first run) so a
-bad fetch can never blank out good data. Delivery figures are never fetched —
-they are carried forward untouched (manual data, edited via the dashboard's
-"Edit Data" panel / by hand).
+bad fetch can never blank out good data. Delivery figures for the other 7
+companies (and Tesla's annual del_total/del_bev/del_dm rollup) are still never
+fetched — they carry forward untouched (manual data, edited via the dashboard's
+"Edit Data" panel / by hand). Tesla's *quarterly* production/delivery numbers
+are the one exception: they're pulled from Tesla's own SEC EDGAR 8-K filings
+(see fetch_tesla_deliveries_from_sec) since there's no financial-statement API
+for that, but SEC's filing archive is a free, stable, no-auth source for it.
 """
 import json
 import logging
 import os
+import re
+import time
 from datetime import datetime, timezone
 
+import requests
 import yfinance as yf
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 log = logging.getLogger("fetcher")
+
+# SEC's bot-detection WAF requires something that looks like a real
+# "name contact@domain" User-Agent (their documented format) — generic
+# strings, and even email-shaped strings on a handful of common domains
+# (github.com among them), get a 403 "Undeclared Automated Tool" response
+# regardless of request volume. example.com (reserved for exactly this kind
+# of documentation/placeholder use) works as a default; set SEC_USER_AGENT
+# as a repo secret with your own contact email for a more compliant,
+# longer-term-reliable identifier per SEC's fair-access policy.
+# .get(..., default) isn't enough here: GitHub Actions sets the env var to
+# an empty string (not unset) when the referenced secret doesn't exist.
+SEC_USER_AGENT = os.environ.get('SEC_USER_AGENT') or 'car-industry-dashboard-fetcher contact@example.com'
+TESLA_CIK = '0001318605'
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
 
@@ -170,7 +190,7 @@ SEED_TESLA_DELIVERIES = {
     'deliveries': [25000, 22000, 26150, 29870, 30300, 40740, 83500, 90700, 63019, 95356, 97186, 112095,
                    88496, 90891, 139593, 180667, 184877, 201304, 241391, 308600,
                    310048, 254695, 343830, 405278, 422875, 466140, 435059, 484507,
-                   386810, 443956, 462890, 495570, 336681, 384122, 497099, 418227, 336681, 480126],
+                   386810, 443956, 462890, 495570, 336681, 384122, 497099, 418227, 358023, 480126],
 }
 
 HIGHLIGHTS_NOTE = "Updated manually — edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)"
@@ -425,6 +445,119 @@ def merge_tesla_quarterly(existing, fetched_by_label):
     return out
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# TESLA QUARTERLY DELIVERIES — from SEC EDGAR 8-K filings
+# ═══════════════════════════════════════════════════════════════════════
+QUARTER_WORDS = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4}
+
+# requests' default headers (notably "Accept-Encoding: ...zstd") trip SEC's
+# bot-detection WAF ("Your Request Originates from an Undeclared Automated
+# Tool") even with a proper User-Agent — curl's much smaller default header
+# set doesn't. Stripping down to that same minimal set fixes it.
+_sec_session = requests.Session()
+_sec_session.headers.clear()
+
+
+def _sec_get(url):
+    r = _sec_session.get(url, headers={'User-Agent': SEC_USER_AGENT, 'Accept': '*/*'}, timeout=20)
+    r.raise_for_status()
+    time.sleep(0.15)  # be a polite, well-under-the-limit citizen of SEC's free API
+    return r
+
+
+def _html_to_text(html):
+    text = re.sub(r'<[^>]+>', ' ', html)
+    text = re.sub(r'&#\d+;', ' ', text)
+    text = re.sub(r'&nbsp;', ' ', text)
+    return re.sub(r'\s+', ' ', text)
+
+
+def _parse_tesla_delivery_exhibit(text):
+    """Tesla's quarterly 'Production, Deliveries & Deployments' press
+    release has a consistent 'Total <production> <deliveries>' summary row
+    and a '<Ordinal> Quarter <year>' title — e.g. 'Total 451,758 480,126 2%'
+    under 'Second Quarter 2026'. Returns (label, production, deliveries) or
+    None if this filing doesn't look like a delivery report (e.g. it's the
+    earnings-release 8-K instead, which shares the same SEC item code)."""
+    m_q = re.search(r'\b(First|Second|Third|Fourth) Quarter (\d{4})', text)
+    m_total = re.search(r'\bTotal\s+([\d,]+)\s+([\d,]+)', text)
+    if not m_q or not m_total:
+        return None
+    qnum = QUARTER_WORDS[m_q.group(1).lower()]
+    year = int(m_q.group(2))
+    production = int(m_total.group(1).replace(',', ''))
+    deliveries = int(m_total.group(2).replace(',', ''))
+    return f"Q{qnum} {year % 100:02d}", production, deliveries
+
+
+def fetch_tesla_deliveries_from_sec(max_filings_to_check=16):
+    """Scan Tesla's recent 8-Ks for the quarterly delivery-report exhibit.
+    Re-checks the last ~2 years of filings every run (not just new ones) so
+    a stale/incorrect seed value gets self-corrected, the same way the
+    yfinance-backed metrics already do. Returns {quarter_label: {'production','deliveries'}}."""
+    out = {}
+    try:
+        subs = _sec_get(f'https://data.sec.gov/submissions/CIK{TESLA_CIK}.json').json()
+    except Exception as e:
+        log.warning(f"SEC submissions lookup failed: {e}")
+        return out
+
+    recent = subs.get('filings', {}).get('recent', {})
+    forms = recent.get('form', [])
+    accessions = recent.get('accessionNumber', [])
+    items_list = recent.get('items', [])
+    cik_num = TESLA_CIK.lstrip('0')
+
+    checked = 0
+    for i, form in enumerate(forms):
+        if checked >= max_filings_to_check:
+            break
+        item_str = items_list[i] if i < len(items_list) else ''
+        if form != '8-K' or '2.02' not in item_str:
+            continue
+        checked += 1
+        accn = accessions[i].replace('-', '')
+        try:
+            index = _sec_get(f'https://www.sec.gov/Archives/edgar/data/{cik_num}/{accn}/index.json').json()
+        except Exception as e:
+            log.warning(f"SEC filing index fetch failed for {accessions[i]}: {e}")
+            continue
+        exhibit_name = next(
+            (it['name'] for it in index.get('directory', {}).get('item', [])
+             if re.match(r'ex(hibit)?-?99', it['name'], re.I)), None)
+        if not exhibit_name:
+            continue
+        try:
+            text = _html_to_text(_sec_get(
+                f'https://www.sec.gov/Archives/edgar/data/{cik_num}/{accn}/{exhibit_name}').text)
+        except Exception as e:
+            log.warning(f"SEC exhibit fetch failed for {accessions[i]}: {e}")
+            continue
+        parsed = _parse_tesla_delivery_exhibit(text)
+        if parsed:
+            label, production, deliveries = parsed
+            out[label] = {'production': production, 'deliveries': deliveries}
+
+    if not out:
+        log.warning(f"SEC: checked {checked} candidate 8-Ks, found no parseable delivery report")
+    else:
+        log.info(f"SEC: parsed {len(out)} Tesla delivery quarters from {checked} candidate 8-Ks")
+    return out
+
+
+def merge_tesla_deliveries(existing, fetched_by_label):
+    existing_labels = existing.get('labels', [])
+    all_labels = sorted(set(existing_labels) | set(fetched_by_label.keys()), key=quarter_sort_key)
+    prev_prod = arrays_to_dict(existing_labels, existing.get('production', []))
+    prev_del = arrays_to_dict(existing_labels, existing.get('deliveries', []))
+    production, deliveries = [], []
+    for label in all_labels:
+        f = fetched_by_label.get(label)
+        production.append(f['production'] if f else prev_prod.get(label))
+        deliveries.append(f['deliveries'] if f else prev_del.get(label))
+    return {'labels': all_labels, 'production': production, 'deliveries': deliveries}
+
+
 def build_seed_dataset():
     peers = []
     for pid, meta in COMPANIES.items():
@@ -529,7 +662,20 @@ def main():
 
     tesla_quarterly = merge_tesla_quarterly(
         existing.get('tesla_quarterly', SEED_TESLA_QUARTERLY), tq_fetched)
-    tesla_deliveries = existing.get('tesla_deliveries', SEED_TESLA_DELIVERIES)
+
+    try:
+        log.info("Fetching Tesla quarterly deliveries from SEC EDGAR...")
+        td_fetched = fetch_tesla_deliveries_from_sec()
+        deliveries_fetch_error = not td_fetched
+    except Exception as e:
+        log.error(f"tesla deliveries (SEC): fetch failed — {e}")
+        td_fetched = {}
+        deliveries_fetch_error = True
+
+    tesla_deliveries = merge_tesla_deliveries(
+        existing.get('tesla_deliveries', SEED_TESLA_DELIVERIES), td_fetched)
+    tesla_deliveries['fetch_error'] = deliveries_fetch_error
+
     highlights = existing.get('highlights', [dict(h) for h in SEED_HIGHLIGHTS])
 
     output = {
@@ -546,11 +692,14 @@ def main():
     with open(DATA_FILE, 'w') as f:
         json.dump(output, f, indent=2)
     log.info(f"Wrote {DATA_FILE} ({len(new_peers)} companies, {len(years_labels)} years, "
-              f"{len(tesla_quarterly.get('labels', []))} Tesla quarters)")
+              f"{len(tesla_quarterly.get('labels', []))} Tesla quarters, "
+              f"{len(tesla_deliveries.get('labels', []))} Tesla delivery quarters)")
 
     failed_ids = sorted(p['id'] for p in new_peers if p['fetch_error'])
+    if deliveries_fetch_error:
+        failed_ids.append('tesla_deliveries(SEC)')
     if failed_ids:
-        log.warning(f"Companies with fetch errors this run: {', '.join(failed_ids)}")
+        log.warning(f"Fetch errors this run: {', '.join(failed_ids)}")
     gh_output = os.environ.get('GITHUB_OUTPUT')
     if gh_output:
         with open(gh_output, 'a') as f:

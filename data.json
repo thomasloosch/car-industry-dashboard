@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T14:42:56Z",
+  "generated_at": "2026-08-09T16:06:01Z",
   "years": [
     "2017",
     "2018",
@@ -1173,9 +1173,10 @@
       384122,
       497099,
       418227,
-      336681,
+      358023,
       480126
-    ]
+    ],
+    "fetch_error": false
   },
   "highlights_note": "Updated manually \u2014 edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)",
   "highlights": [

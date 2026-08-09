@@ -27,8 +27,10 @@ no cost.
 ## How it works
 
 - [`fetcher.py`](fetcher.py) runs on GitHub Actions every Sunday, pulls
-  annual + Tesla-quarterly financials via `yfinance`, and writes
-  [`data.json`](data.json).
+  annual + Tesla-quarterly financials via `yfinance`, pulls **Tesla's
+  quarterly production/delivery numbers from its SEC EDGAR 8-K filings**
+  (the "Production, Deliveries & Deployments" press release — a free,
+  stable, no-auth source; see below), and writes [`data.json`](data.json).
 - The workflow ([`.github/workflows/update-data.yml`](.github/workflows/update-data.yml))
   commits the updated `data.json` back to the repo.
 - [`index.html`](index.html) fetches `data.json` on page load and renders
@@ -49,16 +51,30 @@ discard your local edits and go back to what the pipeline fetched.
 
 ## Data notes
 
-- Delivery figures (`del_total`, `del_bev`, `del_dm`), Tesla's segment
-  revenue breakdown, and the 5 header stat cards (`highlights` in
-  `data.json`) are never fetched automatically — there's no reliable free
-  API for vehicle delivery counts, and some of the stat-card sub-copy
-  (YoY deltas, "ahead of Tesla on BEV", "recovering") is editorial
-  judgment rather than something computable from the numbers. All of it
-  carries forward untouched from the dashboard's built-in dataset until
-  edited by hand — delivery figures and Tesla segment revenue via the
-  **✏ Edit Data** panel, the `highlights` array by editing `data.json`
-  directly (not yet exposed in the editor UI).
+- **Tesla's quarterly production/delivery numbers are auto-fetched** from
+  its SEC EDGAR 8-K filings (`fetch_tesla_deliveries_from_sec` in
+  `fetcher.py`). Every run re-checks the last ~2 years of filings (not just
+  new ones), so a wrong/stale historical value gets self-corrected the same
+  way the yfinance-backed metrics already do — this is in fact how a stale
+  seed value for Q1 2026 (336,681, a leftover copy of Q1 2025's figure) got
+  caught and fixed to the real 358,023 while building this feature.
+  SEC's bot-detection WAF is picky: it 403s Python's `requests` default
+  headers and even rejects some User-Agent strings (see `SEC_USER_AGENT`
+  in `fetcher.py`) — if this starts failing, set a `SEC_USER_AGENT` repo
+  secret (Settings → Secrets and variables → Actions) with your own
+  `name contact@yourdomain.com`-style string, per
+  [SEC's fair-access policy](https://www.sec.gov/os/webmaster-faq#developers).
+- Delivery figures for every other company (`del_total`, `del_bev`,
+  `del_dm`), Tesla's *annual* rollup of the same, Tesla's segment revenue
+  breakdown, and the 5 header stat cards (`highlights` in `data.json`) are
+  **not** fetched automatically — there's no reliable free API for them
+  covering all 8 companies, and some of the stat-card sub-copy (YoY deltas,
+  "ahead of Tesla on BEV", "recovering") is editorial judgment rather than
+  something computable from the numbers. All of it carries forward
+  untouched from the dashboard's built-in dataset until edited by hand —
+  delivery figures and Tesla segment revenue via the **✏ Edit Data** panel,
+  the `highlights` array by editing `data.json` directly (not yet exposed
+  in the editor UI).
 - Chart title date ranges (e.g. "2017–2025", "Q1 2022–Q2 2026") are
   computed from the actual data on load, so they keep pace as the
   pipeline adds new years/quarters. The prose inside chart notes/info
@@ -76,9 +92,12 @@ discard your local edits and go back to what the pipeline fetched.
   occasionally for OTC ADRs like BMWYY, MBGYY, VWAGY, BYDDY — Yahoo's free
   data for these is inconsistent), that company keeps its last known good
   values and is flagged `"fetch_error": true` in `data.json` rather than
-  being blanked out. When this happens, the workflow opens (or updates) a
-  GitHub issue titled "Weekly data fetch: some companies failed" listing
-  which ones — it auto-closes itself once a run succeeds for everyone.
+  being blanked out — same idea for a failed SEC delivery scrape
+  (`tesla_deliveries.fetch_error`). When this happens, the workflow opens
+  (or updates) a GitHub issue titled "Weekly data fetch: some companies
+  failed" listing what failed, and the dashboard shows a banner at the top
+  of the page — it auto-closes/disappears once a run succeeds for
+  everyone.
 
 ## Local development
 
