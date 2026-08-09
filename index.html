@@ -66,7 +66,7 @@ h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
 </div>
 
 <div class="hdr"><div class="logo">T</div><h1>Automotive Peer Comparison — Tesla vs Industry</h1></div>
-<p class="sub">8 companies · Annual 2017–2025 · H1 2026 where available · Financials in USD · Deliveries in thousands · Auto-updates every Sunday via GitHub Actions · Last updated: <span id="lastUpdated">loading…</span></p>
+<p class="sub">8 companies · Annual <span id="annualRangeText">loading…</span> · Financials in USD · Deliveries in thousands · Auto-updates every Sunday via GitHub Actions · Last updated: <span id="lastUpdated">loading…</span></p>
 
 <div class="top-bar">
   <div class="view-toggle">
@@ -79,13 +79,9 @@ h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
 
 <div class="warn-banner" id="fallbackNotice">⚠ Running locally — <code>data.json</code> not found (or failed to load). Showing the last built-in dataset instead. This is expected if you're opening this file directly (<code>file://</code>) rather than serving it, or if the GitHub Actions workflow hasn't run yet. You can still use <strong>✏ Edit Data</strong> below to paste in values manually — your edits are saved to this browser and persist across reloads.</div>
 
-<div class="stats">
-  <div class="stat" style="border-top-color:#DC2626"><div class="sl">Tesla H1 2026 deliveries</div><div class="sv" style="color:#DC2626">817k</div><div class="ss">All BEV · +21% YoY · op margin 2.6%</div></div>
-  <div class="stat" style="border-top-color:#16A34A"><div class="sl">BYD Q2 2026 BEV</div><div class="sv" style="color:#16A34A">557k</div><div class="ss">BEV only · ahead of Tesla Q2 on BEV</div></div>
-  <div class="stat" style="border-top-color:#EA580C"><div class="sl">VW Group H1 2026</div><div class="sv" style="color:#EA580C">4.13M</div><div class="ss">Total · 438k BEV (10.6% share)</div></div>
-  <div class="stat" style="border-top-color:#2563EB"><div class="sl">BMW Group H1 2026</div><div class="sv" style="color:#2563EB">1.16M</div><div class="ss">Total · 204k BEV (17.7% share)</div></div>
-  <div class="stat" style="border-top-color:#9333EA"><div class="sl">Stellantis H1 2026</div><div class="sv" style="color:#9333EA">2.96M</div><div class="ss">Total shipments · recovering</div></div>
-</div>
+<div class="warn-banner" id="fetchIssueNotice"></div>
+
+<div class="stats" id="statsGrid"></div>
 
 <!-- ═══ PEER ════════════════════════════════════════════════════════════ -->
 <div id="sec-peer" class="section active">
@@ -157,6 +153,7 @@ let TQ = [];
 let tRA=[], tRE=[], tRS=[], tGM=[], tOM=[], tNI=[], tFCF=[], tCX=[], tCS=[];
 let tCXe = [];
 let TQDEL_Q=[], TQPROD=[], TQDELI=[];
+let highlights = [];
 
 // ═══════════════════════════════════════════════════════════════════════
 // OFFLINE FALLBACK — used only if data.json can't be fetched (e.g. opened
@@ -268,6 +265,14 @@ const FALLBACK_DATA = {
               310048,254695,343830,405278,422875,466140,435059,484507,
               386810,443956,462890,495570,336681,384122,497099,418227,336681,480126],
  },
+ highlights_note: "Updated manually — edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)",
+ highlights: [
+  {id:'tesla',color:'#DC2626',label:'Tesla H1 2026 deliveries',value:'817k',sub:'All BEV · +21% YoY · op margin 2.6%'},
+  {id:'byd',color:'#16A34A',label:'BYD Q2 2026 BEV',value:'557k',sub:'BEV only · ahead of Tesla Q2 on BEV'},
+  {id:'vw',color:'#EA580C',label:'VW Group H1 2026',value:'4.13M',sub:'Total · 438k BEV (10.6% share)'},
+  {id:'bmw',color:'#2563EB',label:'BMW Group H1 2026',value:'1.16M',sub:'Total · 204k BEV (17.7% share)'},
+  {id:'stellantis',color:'#9333EA',label:'Stellantis H1 2026',value:'2.96M',sub:'Total shipments · recovering'},
+ ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -277,31 +282,31 @@ const FIN_METRICS = ['margin','revenue','ni','fcf','capex'];
 let curDelSub = 'total';
 
 const MC = {
- margin:{key:'margin',title:'Operating Margin % — 2017–2025 · H1 2026 where reported',
+ margin:{key:'margin',title:'Operating Margin % — {YEARS} · H1 2026 where reported',
   sub:'H1 26* = half-year. Definitions vary — see note. Tesla arc: –14% (2017) → +17% (2022) → 2.6% (H1 2026)',
   fmt:v=>`${v.toFixed(1)}%`,yTick:v=>`${v}%`,
   note:'Definitions: Tesla=GAAP op margin · Ford H1 2026=adj EBIT margin 6.6% (GAAP negative due to BlueOval SK charges) · GM=EBIT-adj · VW=op return on sales · BMW=auto-seg EBIT margin · Mercedes=Cars RoS (pre-2022 = Daimler AG) · Stellantis=AOI margin · BYD=GAAP op margin (incl. electronics). Tesla Q2 2026: op margin 1.4%; H1 avg 2.6%. OpEx surged 47% on AI/Cybercab investment. CapEx jumped 142% in Q2.',
   info:'COVID 2020 trough visible across all. 2021 chip shortage → lower volume but pricing power = record margins for legacy OEMs. Tesla peaked at 19.2% (Q1 2022). Mercedes H1 2026 not yet reported.',
  },
- revenue:{key:'revenue',title:'Revenue — 2017–2025 · H1 2026 where reported ($B USD)',
+ revenue:{key:'revenue',title:'Revenue — {YEARS} · H1 2026 where reported ($B USD)',
   sub:'H1 26* = half-year (NOT annualised). EUR×period-avg; CNY×period-avg',
   fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
   note:'H1 2026 values are half-year. Mercedes pre-2022 = Daimler AG (incl. Daimler Truck). VW/BMW/Mercedes include financial services. BYD includes electronics (~30%). Tesla hit $100B in trailing 12-month revenue for the first time in Q2 2026.',
   info:'',
  },
- ni:{key:'ni',title:'Net Income — 2017–2025 · H1 2026 where reported ($B USD)',
+ ni:{key:'ni',title:'Net Income — {YEARS} · H1 2026 where reported ($B USD)',
   sub:'H1 26* = half-year. GAAP · Multiple material one-time items — see note',
   fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
   note:'One-time distortions: Ford 2017/2025 · GM 2017 (tax reform) · BMW 2022 (Brilliance JV) · Mercedes/Daimler 2021 (Truck spin-off) · Tesla 2023 (tax asset release) · Tesla Q2 2026 NI $1.1B incl. $1.0B SpaceX unrealised gain · Stellantis 2025 (–€22B reset charges = –$24.1B GAAP).',
   info:'',
  },
- fcf:{key:'fcf',title:'Free Cash Flow — 2017–2025 · H1 2026 where reported ($B USD)',
+ fcf:{key:'fcf',title:'Free Cash Flow — {YEARS} · H1 2026 where reported ($B USD)',
   sub:'H1 26* = half-year. Definitions vary — directional comparison only',
   fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
   note:'Definitions: Tesla=op cash – capex (GAAP; H1 2026: +$0.35B as Q1 +$1.44B offset Q2 –$1.09B when CapEx surged 142%) · Ford=adj FCF · GM=adj auto FCF · VW=auto-div cash flow (H1 2026: +€3.2B vs –€1.4B in H1 2025 — dramatic improvement) · BMW=auto-seg FCF · Mercedes=industrial FCF (2024/25 confirmed) · Stellantis=industrial FCF (H1 2026: –€0.97B) · BYD=approximate.',
   info:'',
  },
- capex:{key:'capex',title:'Capital Expenditure — 2017–2025 · H1 2026 where reported ($B USD)',
+ capex:{key:'capex',title:'Capital Expenditure — {YEARS} · H1 2026 where reported ($B USD)',
   sub:'H1 26* = half-year. VW group incl. all brands + trucks; non-Tesla largely approx',
   fmt:v=>`$${v.toFixed(1)}B`,yTick:v=>`$${v}B`,
   note:'Tesla H1 2026 CapEx: Q1 $2.5B + Q2 $5.8B = $8.3B. Q2 alone (+142% YoY) driven by AI chip infrastructure, Cybercab line, and a planned chip fabrication facility announced on the earnings call. 2026 on track to be Tesla\'s largest-ever CapEx year by a wide margin. VW includes all brands and TRATON trucks — not comparable to single-brand peers. European figures approximate EUR conversions.',
@@ -312,7 +317,7 @@ const MC = {
 function getDelConfig(){
  const s=curDelSub;
  if(s==='total')return{
-  title:'Total Vehicle Deliveries — 2017–2025 · H1 2026 where confirmed (000s)',
+  title:'Total Vehicle Deliveries — {YEARS} · H1 2026 where confirmed (000s)',
   sub:'H1 26* = half-year. Ford/GM = primarily NA+Europe. BYD = BEV + DM/PHEV combined.',
   fmt:v=>`${v.toFixed(0)}k`,yTick:v=>`${Math.round(v)}k`,
   dataFn:p=>p.del_total,
@@ -320,7 +325,7 @@ function getDelConfig(){
   info:'The scale gap is striking: VW delivers 10M+/yr, Tesla 1.6M, BYD 4M+. The more useful comparison on this chart is directional trends. Switch to "BEV only" to see where the EV race actually stands.',
  };
  if(s==='bev')return{
-  title:'Battery Electric Vehicle (BEV) Deliveries — 2017–2025 · H1 2026 (000s)',
+  title:'Battery Electric Vehicle (BEV) Deliveries — {YEARS} · H1 2026 (000s)',
   sub:'Pure BEV only (excludes PHEV/DM). BYD H1 2026: Q2 confirmed 557k, Q1 estimated ~418k.',
   fmt:v=>`${v.toFixed(0)}k`,yTick:v=>`${Math.round(v)}k`,
   dataFn:p=>p.del_bev,
@@ -328,7 +333,7 @@ function getDelConfig(){
   info:'VW Group BEV trajectory: 29k (2017) → 572k (2022) → 900k (2025) → 438k in H1 2026. BMW: 33k → 216k → 440k → 204k H1. Mercedes accelerated sharply 2021–2023 then pulled back targets. Tesla + BYD still dominate the pure BEV category globally.',
  };
  return{ // share
-  title:'BEV Share of Total Deliveries (%) — 2017–2025 · H1 2026',
+  title:'BEV Share of Total Deliveries (%) — {YEARS} · H1 2026',
   sub:'BEV / total deliveries. Tesla = 100%. BYD = BEV-only share (their DM/PHEV also electrified).',
   fmt:v=>`${v.toFixed(1)}%`,yTick:v=>`${v}%`,
   dataFn:p=>p.del_total.map((t,i)=>t&&p.del_bev[i]!=null?+(p.del_bev[i]/t*100).toFixed(1):null),
@@ -345,6 +350,26 @@ const G='#F0F2F5',A='#9CA3AF';
 const ttB={backgroundColor:'#fff',borderColor:'#E5E7EB',borderWidth:1,
  titleColor:'#111827',bodyColor:'#374151',padding:9,cornerRadius:7,boxPadding:3,
  titleFont:{weight:'700',size:11.5,family:'system-ui'},bodyFont:{size:11,family:'system-ui'}};
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATE-RANGE LABELS — computed from the live YRS/TQ/TQDEL_Q arrays so
+// chart titles keep tracking reality as the pipeline adds new
+// years/quarters, instead of staying frozen on the range that happened to
+// be current when this page was written.
+// ═══════════════════════════════════════════════════════════════════════
+function annualYearRangeLabel(){
+ const fullYears=YRS.filter(y=>y!=='H1 26*');
+ return fullYears.length?`${fullYears[0]}–${fullYears[fullYears.length-1]}`:'';
+}
+function quarterRangeLabel(labels){
+ return (labels&&labels.length)?`${labels[0]}–${labels[labels.length-1]}`:'';
+}
+function fillRangeTokens(str){
+ return str
+  .replace('{YEARS}',annualYearRangeLabel())
+  .replace('{RANGE}',quarterRangeLabel(TQ))
+  .replace('{DELRANGE}',quarterRangeLabel(TQDEL_Q));
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // PEER COMPARISON
@@ -385,7 +410,7 @@ function setDelSub(s){
 function renderPeer(){
  const isD=curM==='deliveries';
  const cfg=isD?getDelConfig():MC[curM];
- document.getElementById('pTitle').textContent=cfg.title;
+ document.getElementById('pTitle').textContent=fillRangeTokens(cfg.title);
  document.getElementById('pSub').textContent=cfg.sub;
  const nEl=document.getElementById('pNote'),iEl=document.getElementById('pInfo');
  nEl.style.display=cfg.note?'block':'none';if(cfg.note)nEl.textContent=cfg.note;
@@ -422,7 +447,7 @@ function renderPeer(){
 // TESLA TABS
 // ═══════════════════════════════════════════════════════════════════════
 const TSCFG=[
- {title:'Revenue by Segment ($B) · Q1 2022–Q2 2026',sub:'Stacked: Automotive · Energy & Storage · Services · Segment data from 8-Ks (not auto-updated)',
+ {title:'Revenue by Segment ($B) · {RANGE}',sub:'Stacked: Automotive · Energy & Storage · Services · Segment data from 8-Ks (not auto-updated)',
   axisR:'',nA:'',nB:'Tesla Q2 2026: record $28.24B total (+26% YoY). Auto $20.52B (+23%), Energy $3.14B (+13%), Services $4.58B (+50%). First trailing 12-month revenue above $100B.',
   leg:[{c:TC.P,t:'box',l:'Automotive'},{c:TC.N,t:'box',l:'Energy & Storage'},{c:TC.D,t:'box',l:'Services'}],
   build(){return{type:'bar',data:{labels:TQ,datasets:[
@@ -437,7 +462,7 @@ const TSCFG=[
    scales:{x:{stacked:true,grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
            y:{stacked:true,grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(0)}B`}}},
   }};} },
- {title:'Gross Margin & Operating Margin (%) · Q1 2022–Q2 2026',sub:'GAAP · Q2 2026: gross 16.8%, operating 1.4%',
+ {title:'Gross Margin & Operating Margin (%) · {RANGE}',sub:'GAAP · Q2 2026: gross 16.8%, operating 1.4%',
   axisR:'',nA:'Q2 2026: operating margin fell to 1.4% (vs 4.1% in Q2 2025) as operating expenses surged 47% to $4.35B — AI infrastructure, Cybercab production ramp, FSD/Robotaxi R&D. CFO Taneja stated OpEx will "grow in 2026 and beyond."',nB:'',
   leg:[{c:TC.P,t:'line',l:'Gross margin %'},{c:TC.om,t:'line',l:'Operating margin %'}],
   build(){return{type:'line',data:{labels:TQ,datasets:[
@@ -451,7 +476,7 @@ const TSCFG=[
    scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
            y:{grid:{color:G},border:{display:false},min:0,max:35,ticks:{color:A,font:{size:10},callback:v=>`${v}%`}}},
   }};} },
- {title:'Net Income — GAAP ($M) · Q1 2022–Q2 2026',sub:'Q4 2023 amber: $5.9B one-time tax · Q2 2026 orange: $1.0B SpaceX unrealised gain',
+ {title:'Net Income — GAAP ($M) · {RANGE}',sub:'Q4 2023 amber: $5.9B one-time tax · Q2 2026 orange: $1.0B SpaceX unrealised gain',
   axisR:'',nA:'Q4 2023: $7.9B includes $5.9B deferred tax asset release. Q2 2026: $1.11B includes $1.005B unrealised SpaceX equity gain excluded from non-GAAP ($0.33/share vs $0.53 expected). Underlying run-rate significantly below the GAAP headline in both quarters.',nB:'',
   leg:[{c:TC.P,t:'box',l:'Net income (GAAP)'},{c:TC.ot,t:'box',l:'Q4 2023 one-time'},{c:'#F97316',t:'box',l:'Q2 2026 SpaceX gain'}],
   build(){const cl=tNI.map((_,i)=>i===7?TC.ot+'CC':i===17?'#F97316CC':TC.P+'CC');
@@ -462,7 +487,7 @@ const TSCFG=[
      scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
              y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(1)}B`}}},
     }};} },
- {title:'Free Cash Flow ($M) · Q1 2022–Q2 2026',sub:'Q1 2024 and Q2 2026 negative on AI capex surge',
+ {title:'Free Cash Flow ($M) · {RANGE}',sub:'Q1 2024 and Q2 2026 negative on AI capex surge',
   axisR:'',nA:'',nB:'Q2 2026 FCF = –$1.09B: op cash $4.70B (+85% YoY) overwhelmed by CapEx $5.79B (+142%). Tesla explicitly guided that CapEx and OpEx will continue to grow through 2026+ as it builds AI chips, the Cybercab factory, and Semi/Megapack ramps.',
   leg:[{c:TC.fp,t:'box',l:'FCF positive'},{c:TC.fn,t:'box',l:'FCF negative'}],
   build(){const cl=tFCF.map(v=>v<0?TC.fn+'CC':TC.fp+'CC');
@@ -473,7 +498,7 @@ const TSCFG=[
      scales:{x:{grid:{display:false},border:{color:'#E5E7EB'},ticks:{color:'#374151',font:{size:10}}},
              y:{grid:{color:G},border:{display:false},ticks:{color:A,font:{size:10},callback:v=>`$${(v/1000).toFixed(1)}B`}}},
     }};} },
- {title:'CapEx & Cash & Investments · Q1 2022–Q2 2026',sub:'CapEx bars left ($M) · Cash & investments line right ($M)',
+ {title:'CapEx & Cash & Investments · {RANGE}',sub:'CapEx bars left ($M) · Cash & investments line right ($M)',
   axisR:'Cash →',nA:'',nB:'Q2 2026 CapEx $5.79B = largest quarter in Tesla history. Cash fell from $44.76B (Q1 2026) to $43.52B (Q2 2026). Full-year 2026 CapEx likely to exceed $20B — Tesla is building AI chip fabs, Cybercab lines, and Semi capacity simultaneously.',
   leg:[{c:TC.cx,t:'box',l:'CapEx (left)'},{c:TC.cs,t:'line',l:'Cash & investments (right)'}],
   build(){
@@ -494,7 +519,7 @@ const TSCFG=[
      y2:{position:'right',grid:{drawOnChartArea:false},border:{display:false},ticks:{color:TC.cs,font:{size:10},callback:v=>`$${(v/1000).toFixed(0)}B`}},
     },
    }};} },
- {title:'Quarterly Production & Deliveries · Q1 2017–Q2 2026',sub:'All vehicles are BEV · bars = deliveries · line = production',
+ {title:'Quarterly Production & Deliveries · {DELRANGE}',sub:'All vehicles are BEV · bars = deliveries · line = production',
   axisR:'',nA:'',nB:'Q2 2026: production 451,758 (record Q2), deliveries 480,126 (record Q2). Deliveries exceeded production for the second consecutive quarter — drawing down the inventory built in Q1 2025. Q3 2025 was previously the delivery record (497,099) achieved by releasing the H2-2024 inventory build.',
   leg:[{c:TC.D,t:'box',l:'Deliveries'},{c:TC.P,t:'line',l:'Production'}],
   build(){return{type:'bar',data:{labels:TQDEL_Q,datasets:[
@@ -520,7 +545,7 @@ function setTS(i){
  curTSTab=i;
  document.querySelectorAll('.stab').forEach((t,j)=>t.classList.toggle('active',j===i));
  const c=TSCFG[i];
- document.getElementById('tTitle').textContent=c.title;
+ document.getElementById('tTitle').textContent=fillRangeTokens(c.title);
  document.getElementById('tSub').textContent=c.sub;
  document.getElementById('tAxisR').textContent=c.axisR||'';
  document.getElementById('tAxisR').style.color=i===4?TC.cs:A;
@@ -558,6 +583,31 @@ function applyData(d){
  tCXe = tCX.map(()=>false);
  const td = d.tesla_deliveries || {};
  TQDEL_Q = td.labels || []; TQPROD = td.production || []; TQDELI = td.deliveries || [];
+ highlights = d.highlights || [];
+}
+
+// Header stat cards — sourced from data.json's `highlights` (never
+// auto-computed; see highlights_note). Rendering them from data instead of
+// hardcoded HTML means they can't silently drift out of sync with the
+// chart data below, and they update if `highlights` is hand-edited.
+function renderHighlights(){
+ document.getElementById('statsGrid').innerHTML = highlights.map(h=>`
+  <div class="stat" style="border-top-color:${h.color}">
+   <div class="sl">${h.label}</div>
+   <div class="sv" style="color:${h.color}">${h.value}</div>
+   <div class="ss">${h.sub}</div>
+  </div>`).join('');
+}
+
+// Surfaces peers whose most recent fetch failed (fetch_error:true in
+// data.json) — previously only a small "⚠" in the peer-chart legend.
+function renderFetchIssues(){
+ const failed = peers.filter(p=>p.fetch_error);
+ const el = document.getElementById('fetchIssueNotice');
+ if(!failed.length){el.style.display='none';return;}
+ const names = failed.map(p=>p.name).join(', ');
+ el.innerHTML = `⚠ This week's data fetch failed for <strong>${names}</strong> — showing their last known-good values instead (never blanked out). This is usually temporary (common for OTC ADR tickers); check the repo's Actions tab or open issues for details.`;
+ el.style.display='block';
 }
 
 function formatGeneratedAt(iso){
@@ -616,7 +666,11 @@ async function init(){
  document.getElementById('lastUpdated').textContent = isFallback
   ? 'running locally — data.json not found'
   : formatGeneratedAt(data.generated_at);
+ document.getElementById('annualRangeText').textContent = annualYearRangeLabel() || YRS.join('–');
  if(isFallback) document.getElementById('fallbackNotice').style.display='block';
+
+ renderHighlights();
+ renderFetchIssues();
 
  vis = new Set(peers.map(p=>p.id));
  buildCompanyToggle();

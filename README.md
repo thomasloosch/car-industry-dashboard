@@ -49,10 +49,23 @@ discard your local edits and go back to what the pipeline fetched.
 
 ## Data notes
 
-- Delivery figures (`del_total`, `del_bev`, `del_dm`) and Tesla's segment
-  revenue breakdown are never fetched automatically — there's no reliable
-  free API for them. They carry forward from the dashboard's built-in
-  dataset until edited by hand.
+- Delivery figures (`del_total`, `del_bev`, `del_dm`), Tesla's segment
+  revenue breakdown, and the 5 header stat cards (`highlights` in
+  `data.json`) are never fetched automatically — there's no reliable free
+  API for vehicle delivery counts, and some of the stat-card sub-copy
+  (YoY deltas, "ahead of Tesla on BEV", "recovering") is editorial
+  judgment rather than something computable from the numbers. All of it
+  carries forward untouched from the dashboard's built-in dataset until
+  edited by hand — delivery figures and Tesla segment revenue via the
+  **✏ Edit Data** panel, the `highlights` array by editing `data.json`
+  directly (not yet exposed in the editor UI).
+- Chart title date ranges (e.g. "2017–2025", "Q1 2022–Q2 2026") are
+  computed from the actual data on load, so they keep pace as the
+  pipeline adds new years/quarters. The prose inside chart notes/info
+  boxes (call-outs like "Tesla hit $100B... for the first time in Q2
+  2026") is static narrative written for this snapshot and will need
+  manual updates over time — it isn't something that can be generated
+  from the numbers alone.
 - Non-USD reporters (VW, BMW, Mercedes, Stellantis report in EUR; BYD in
   CNY) are converted to USD using that year's average daily FX rate (falling
   back to the current spot rate for any year the FX history lookup misses)

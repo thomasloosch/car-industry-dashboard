@@ -173,6 +173,26 @@ SEED_TESLA_DELIVERIES = {
                    386810, 443956, 462890, 495570, 336681, 384122, 497099, 418227, 336681, 480126],
 }
 
+HIGHLIGHTS_NOTE = "Updated manually — edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)"
+
+# The header stat cards. Never auto-computed — some of this (YoY deltas,
+# "ahead of Tesla on BEV", "recovering") is editorial judgment, not
+# something derivable from the numbers in `peers`/`tesla_quarterly`. Kept
+# here (rather than hardcoded in index.html) purely so there's one source
+# of truth instead of two copies that can silently drift apart.
+SEED_HIGHLIGHTS = [
+    {'id': 'tesla', 'color': '#DC2626', 'label': 'Tesla H1 2026 deliveries',
+     'value': '817k', 'sub': 'All BEV · +21% YoY · op margin 2.6%'},
+    {'id': 'byd', 'color': '#16A34A', 'label': 'BYD Q2 2026 BEV',
+     'value': '557k', 'sub': 'BEV only · ahead of Tesla Q2 on BEV'},
+    {'id': 'vw', 'color': '#EA580C', 'label': 'VW Group H1 2026',
+     'value': '4.13M', 'sub': 'Total · 438k BEV (10.6% share)'},
+    {'id': 'bmw', 'color': '#2563EB', 'label': 'BMW Group H1 2026',
+     'value': '1.16M', 'sub': 'Total · 204k BEV (17.7% share)'},
+    {'id': 'stellantis', 'color': '#9333EA', 'label': 'Stellantis H1 2026',
+     'value': '2.96M', 'sub': 'Total shipments · recovering'},
+]
+
 # ═══════════════════════════════════════════════════════════════════════
 # yfinance row-name lookups (Yahoo renames these occasionally across
 # versions, so each field tries a few known aliases)
@@ -431,6 +451,8 @@ def build_seed_dataset():
         'deliveries_note': DELIVERIES_NOTE,
         'tesla_quarterly': {k: list(v) for k, v in SEED_TESLA_QUARTERLY.items()},
         'tesla_deliveries': {k: list(v) for k, v in SEED_TESLA_DELIVERIES.items()},
+        'highlights_note': HIGHLIGHTS_NOTE,
+        'highlights': [dict(h) for h in SEED_HIGHLIGHTS],
     }
 
 
@@ -508,6 +530,7 @@ def main():
     tesla_quarterly = merge_tesla_quarterly(
         existing.get('tesla_quarterly', SEED_TESLA_QUARTERLY), tq_fetched)
     tesla_deliveries = existing.get('tesla_deliveries', SEED_TESLA_DELIVERIES)
+    highlights = existing.get('highlights', [dict(h) for h in SEED_HIGHLIGHTS])
 
     output = {
         'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -516,6 +539,8 @@ def main():
         'deliveries_note': DELIVERIES_NOTE,
         'tesla_quarterly': tesla_quarterly,
         'tesla_deliveries': tesla_deliveries,
+        'highlights_note': HIGHLIGHTS_NOTE,
+        'highlights': highlights,
     }
 
     with open(DATA_FILE, 'w') as f:

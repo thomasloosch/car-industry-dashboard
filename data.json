@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T14:25:37Z",
+  "generated_at": "2026-08-09T14:42:56Z",
   "years": [
     "2017",
     "2018",
@@ -1176,5 +1176,43 @@
       336681,
       480126
     ]
-  }
+  },
+  "highlights_note": "Updated manually \u2014 edit the 'highlights' array in data.json directly (not yet exposed in the Edit Data panel)",
+  "highlights": [
+    {
+      "id": "tesla",
+      "color": "#DC2626",
+      "label": "Tesla H1 2026 deliveries",
+      "value": "817k",
+      "sub": "All BEV \u00b7 +21% YoY \u00b7 op margin 2.6%"
+    },
+    {
+      "id": "byd",
+      "color": "#16A34A",
+      "label": "BYD Q2 2026 BEV",
+      "value": "557k",
+      "sub": "BEV only \u00b7 ahead of Tesla Q2 on BEV"
+    },
+    {
+      "id": "vw",
+      "color": "#EA580C",
+      "label": "VW Group H1 2026",
+      "value": "4.13M",
+      "sub": "Total \u00b7 438k BEV (10.6% share)"
+    },
+    {
+      "id": "bmw",
+      "color": "#2563EB",
+      "label": "BMW Group H1 2026",
+      "value": "1.16M",
+      "sub": "Total \u00b7 204k BEV (17.7% share)"
+    },
+    {
+      "id": "stellantis",
+      "color": "#9333EA",
+      "label": "Stellantis H1 2026",
+      "value": "2.96M",
+      "sub": "Total shipments \u00b7 recovering"
+    }
+  ]
 }
