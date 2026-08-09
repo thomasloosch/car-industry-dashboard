@@ -244,8 +244,8 @@ def get_financial_currency(ticker, hint):
 
 
 def fx_rate_to_usd(currency):
-    """1 unit of `currency` in USD. Ratios (margins) don't need this — only
-    absolute dollar figures (revenue, NI, FCF, CapEx, cash) do."""
+    """1 unit of `currency` in USD, live spot rate. Used only as a fallback
+    when a year is missing from fx_yearly_averages()."""
     if currency == 'USD':
         return 1.0
     pair = f'{currency}USD=X'
@@ -255,17 +255,39 @@ def fx_rate_to_usd(currency):
         if rate and rate > 0:
             return rate
     except Exception as e:
-        log.warning(f"FX lookup failed for {pair} ({e}); using fallback rate")
+        log.warning(f"FX spot lookup failed for {pair} ({e}); using fallback rate")
     return FX_FALLBACK_TO_USD.get(currency, 1.0)
+
+
+def fx_yearly_averages(currency, start_year=2017):
+    """{year: average `currency`-to-USD rate for that calendar year}, from
+    daily FX history. A period average is a much closer match to how
+    companies actually translate a full year of foreign-currency financials
+    than a single current spot rate would be."""
+    if currency == 'USD':
+        return {}
+    pair = f'{currency}USD=X'
+    try:
+        hist = yf.Ticker(pair).history(start=f'{start_year}-01-01')
+        if hist is None or hist.empty:
+            return {}
+        closes = hist['Close'].dropna()
+        yearly = closes.groupby(closes.index.year).mean()
+        return {int(y): float(v) for y, v in yearly.items()}
+    except Exception as e:
+        log.warning(f"FX history lookup failed for {pair} ({e}); yearly figures will use spot fallback")
+        return {}
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # FETCHING
 # ═══════════════════════════════════════════════════════════════════════
-def fetch_annual_metrics(ticker, fx_to_usd=1.0):
+def fetch_annual_metrics(ticker, fx_by_year=None, fx_fallback=1.0):
     """Return {year: {'margin','revenue','ni','fcf','capex'}} for years with usable data.
-    fx_to_usd converts the filer's reporting currency to USD; margin is a
-    ratio so it's unaffected either way."""
+    fx_by_year converts the filer's reporting currency to USD per calendar
+    year (falling back to fx_fallback for years it doesn't cover); margin is
+    a ratio so it's unaffected either way."""
+    fx_by_year = fx_by_year or {}
     t = yf.Ticker(ticker)
     inc = t.income_stmt
     cf = t.cashflow
@@ -279,14 +301,15 @@ def fetch_annual_metrics(ticker, fx_to_usd=1.0):
     for year, r in rev.items():
         if not r:
             continue
-        entry = {'revenue': round(r * fx_to_usd / 1e9, 2)}
+        fx = fx_by_year.get(year, fx_fallback)
+        entry = {'revenue': round(r * fx / 1e9, 2)}
         o = op.get(year)
         entry['margin'] = round(o / r * 100, 2) if o is not None else None
         n = ni.get(year)
-        entry['ni'] = round(n * fx_to_usd / 1e9, 2) if n is not None else None
+        entry['ni'] = round(n * fx / 1e9, 2) if n is not None else None
         oc, cx = ocf.get(year), capex.get(year)
-        entry['fcf'] = round((oc - abs(cx)) * fx_to_usd / 1e9, 2) if oc is not None and cx is not None else None
-        entry['capex'] = round(abs(cx) * fx_to_usd / 1e9, 2) if cx is not None else None
+        entry['fcf'] = round((oc - abs(cx)) * fx / 1e9, 2) if oc is not None and cx is not None else None
+        entry['capex'] = round(abs(cx) * fx / 1e9, 2) if cx is not None else None
         out[year] = entry
     return out
 
@@ -431,14 +454,19 @@ def main():
     fetched_per_company = {}
     fetch_errors = {}
     all_fetched_years = set()
+    fx_by_year_cache = {}  # currency -> {year: rate}, shared across companies
 
     for pid, meta in COMPANIES.items():
         ticker = meta['ticker']
         try:
             currency = get_financial_currency(ticker, CURRENCY_HINTS.get(pid, 'USD'))
-            fx = fx_rate_to_usd(currency)
-            log.info(f"Fetching annual financials for {pid} ({ticker}), reporting currency={currency}, fx={fx:.4f}...")
-            fby = fetch_annual_metrics(ticker, fx_to_usd=fx)
+            if currency not in fx_by_year_cache:
+                fx_by_year_cache[currency] = fx_yearly_averages(currency)
+            fx_by_year = fx_by_year_cache[currency]
+            fx_fallback = fx_rate_to_usd(currency)
+            log.info(f"Fetching annual financials for {pid} ({ticker}), reporting currency={currency}, "
+                     f"{len(fx_by_year)} yearly FX rates cached, spot fallback={fx_fallback:.4f}...")
+            fby = fetch_annual_metrics(ticker, fx_by_year=fx_by_year, fx_fallback=fx_fallback)
             fetched_per_company[pid] = fby
             if fby:
                 all_fetched_years |= set(fby.keys())
@@ -494,6 +522,15 @@ def main():
         json.dump(output, f, indent=2)
     log.info(f"Wrote {DATA_FILE} ({len(new_peers)} companies, {len(years_labels)} years, "
               f"{len(tesla_quarterly.get('labels', []))} Tesla quarters)")
+
+    failed_ids = sorted(p['id'] for p in new_peers if p['fetch_error'])
+    if failed_ids:
+        log.warning(f"Companies with fetch errors this run: {', '.join(failed_ids)}")
+    gh_output = os.environ.get('GITHUB_OUTPUT')
+    if gh_output:
+        with open(gh_output, 'a') as f:
+            f.write(f"has_errors={'true' if failed_ids else 'false'}\n")
+            f.write(f"fetch_errors={','.join(failed_ids)}\n")
 
 
 if __name__ == '__main__':

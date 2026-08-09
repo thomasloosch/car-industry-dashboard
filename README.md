@@ -54,14 +54,18 @@ discard your local edits and go back to what the pipeline fetched.
   free API for them. They carry forward from the dashboard's built-in
   dataset until edited by hand.
 - Non-USD reporters (VW, BMW, Mercedes, Stellantis report in EUR; BYD in
-  CNY) are converted to USD using a live spot FX rate at fetch time — this
-  is an approximation, not the period-average rate companies actually use
-  in their filings.
+  CNY) are converted to USD using that year's average daily FX rate (falling
+  back to the current spot rate for any year the FX history lookup misses)
+  — still an approximation of the exact rate each company used in its
+  filings, but much closer than a single current-day rate applied to every
+  historical year.
 - If a ticker's fetch fails or returns nothing usable (this happens
   occasionally for OTC ADRs like BMWYY, MBGYY, VWAGY, BYDDY — Yahoo's free
   data for these is inconsistent), that company keeps its last known good
   values and is flagged `"fetch_error": true` in `data.json` rather than
-  being blanked out.
+  being blanked out. When this happens, the workflow opens (or updates) a
+  GitHub issue titled "Weekly data fetch: some companies failed" listing
+  which ones — it auto-closes itself once a run succeeds for everyone.
 
 ## Local development
 

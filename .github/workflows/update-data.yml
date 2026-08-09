@@ -9,13 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write       # Needed to commit data.json back
+      issues: write         # Needed to open/close the fetch-failure issue
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: python fetcher.py
+      - name: Run fetcher
+        id: fetch
+        run: python fetcher.py
       - name: Commit updated data.json
         run: |
           git config user.name "github-actions[bot]"
@@ -23,3 +26,25 @@ jobs:
           git add data.json
           git diff --cached --quiet || git commit -m "Auto-update financial data $(date -u +%Y-%m-%d)"
           git push
+      - name: Report data-fetch issues
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAS_ERRORS: ${{ steps.fetch.outputs.has_errors }}
+          FETCH_ERRORS: ${{ steps.fetch.outputs.fetch_errors }}
+        run: |
+          TITLE="Weekly data fetch: some companies failed"
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n1)
+
+          if [ "$HAS_ERRORS" = "true" ]; then
+            BODY="The $(date -u +%Y-%m-%d) run of [\`fetcher.py\`](../../blob/main/fetcher.py) could not get usable data for: **$FETCH_ERRORS**. Their last known-good values are still in \`data.json\` (a failed fetch never overwrites good data with null), but those companies haven't been refreshed. This is common for OTC ADR tickers (e.g. BMWYY, MBGYY, VWAGY, BYDDY) when Yahoo Finance's free data is temporarily unavailable — check the [workflow run log](../../actions) for details. This issue auto-closes once a run succeeds for every company."
+            if [ -n "$EXISTING" ]; then
+              gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+            fi
+          elif [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" --repo "$GITHUB_REPOSITORY" \
+              --comment "All companies fetched successfully in the $(date -u +%Y-%m-%d) run — closing."
+          fi
